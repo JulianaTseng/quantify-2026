@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QS Document Intelligence</title>
+<style>
+:root{
+  --ink:#14171a; --ink-2:#3d464e; --muted:#6b7681; --faint:#98a2ac;
+  --line:#e4e7ea; --line-2:#eef1f3;
+  --bg:#fafaf8; --card:#fff; --panel:#f5f6f5;
+  --accent:#0d5c58; --accent-2:#0a4a47; --accent-soft:#e8f2f1;
+  --warn:#9a5b12; --warn-bg:#fdf5e9; --warn-line:#f0dcc0;
+  --bad:#a32f29; --bad-bg:#fceded; --bad-line:#f2cfcd;
+  --good:#2c6b39; --good-bg:#eaf3ec; --good-line:#cfe3d3;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;
+  font-feature-settings:"tnum" 1}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+a{color:var(--accent);text-decoration:none}
+
+/* ---------- shell ---------- */
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60}
+.hwrap{max-width:1260px;margin:0 auto;padding:0 28px;height:56px;display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;letter-spacing:-.01em;cursor:pointer}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.crumb{color:var(--faint);font-size:13px;display:flex;align-items:center;gap:8px;min-width:0}
+.crumb b{color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+.spacer{flex:1}
+.mode{font-size:10px;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:var(--panel);
+  color:var(--faint);border:1px solid var(--line);font-weight:500}
+.mode.live{background:var(--good-bg);color:var(--good);border-color:var(--good-line)}
+.mode.preview{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-line)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);padding:7px 13px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:background .12s,border-color .12s}
+.btn:hover{background:var(--panel);border-color:var(--line-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-2)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--panel);color:var(--ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad-line)}
+.btn.danger:hover{background:var(--bad-bg)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:5px 9px;font-size:11.5px}
+
+main{max-width:1260px;margin:0 auto;padding:26px 28px 90px}
+h2{font-size:15px;font-weight:600;margin-bottom:3px}
+.h2sub{color:var(--muted);font-size:12.5px;margin-bottom:13px}
+section{margin-bottom:26px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+
+/* ---------- home ---------- */
+.pagehead{display:flex;align-items:flex-end;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.pagehead h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.pagehead p{color:var(--muted);font-size:13px;margin-top:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:17px 18px;
+  cursor:pointer;transition:border-color .14s,box-shadow .14s,transform .14s;position:relative}
+.pcard:hover{border-color:#c9d2d6;box-shadow:0 2px 10px rgba(20,23,26,.05);transform:translateY(-1px)}
+.pcard h3{font-size:14.5px;font-weight:600;line-height:1.35;margin-bottom:4px;padding-right:56px}
+.pcard .meta{color:var(--muted);font-size:12px;margin-bottom:12px}
+.pcard .row{display:flex;gap:14px;font-size:11.5px;color:var(--faint);border-top:1px solid var(--line-2);padding-top:10px}
+.pcard .row b{color:var(--ink-2);font-weight:500}
+.pcard .acts{position:absolute;top:14px;right:14px;display:flex;gap:4px;opacity:0;transition:opacity .14s}
+.pcard:hover .acts{opacity:1}
+.pcard.new{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:150px;color:var(--muted);background:transparent}
+.pcard.new:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- project header ---------- */
+.phead{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
+.phead h1{font-size:19px;font-weight:600;letter-spacing:-.015em;margin-bottom:3px}
+.phead .sub{color:var(--muted);font-size:12.5px}
+.phead .sub b{color:var(--ink-2);font-weight:500}
+.phead .bar{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:22px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;padding:9px 13px 10px;
+  font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs .n{font-size:10.5px;color:var(--faint);margin-left:5px}
+.tabs button.on .n{color:var(--accent);opacity:.65}
+
+/* ---------- dropzone ---------- */
+.drop{border:1.5px dashed var(--line);border-radius:var(--radius);padding:30px;text-align:center;
+  background:var(--card);transition:border-color .15s,background .15s;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .big{font-size:14px;font-weight:500;margin-bottom:4px}
+.drop .small{font-size:12px;color:var(--muted)}
+.drop .types{margin-top:10px;font-size:11px;color:var(--faint)}
+
+/* ---------- tables ---------- */
+.tblwrap{overflow-x:auto;border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);padding:9px 11px;border-bottom:1px solid var(--line);background:var(--panel);white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tbody tr:hover{background:#fcfcfb}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+tr.total td{font-weight:600;background:var(--panel);border-top:1.5px solid var(--line);border-bottom:none}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+.pill{display:inline-block;font-size:10.5px;padding:1.5px 6px;border-radius:4px;font-weight:500;white-space:nowrap}
+.pill.star{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.pill.tend{background:var(--accent-soft);color:var(--accent);border:1px solid #cfe4e2}
+.pill.grey{background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.pill.red{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad-line)}
+.pill.grn{background:var(--good-bg);color:var(--good);border:1px solid var(--good-line)}
+
+/* ---------- kpi / findings / clauses / timeline (report) ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px 14px}
+.kpi .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:600;margin-bottom:7px}
+.kpi .v{font-size:23px;font-weight:600;letter-spacing:-.025em;line-height:1.1}
+.kpi .d{font-size:11.5px;color:var(--muted);margin-top:5px}
+.kpi.acc .v{color:var(--accent)}.kpi.pos .v{color:var(--bad)}.kpi.neg .v{color:var(--good)}
+.wf{padding:18px 20px 14px}
+.wfrow{display:grid;grid-template-columns:150px 1fr 132px;align-items:center;gap:14px;padding:6px 0}
+.wfrow .lbl{font-size:12.5px;color:var(--ink-2)}
+.wfrow .track{height:22px;background:var(--panel);border-radius:5px;overflow:hidden}
+.wfrow .bar{height:100%;border-radius:5px}
+.bar.add{background:linear-gradient(90deg,#b9433c,#a32f29)}
+.bar.omi{background:linear-gradient(90deg,#3f8150,#2c6b39)}
+.bar.net{background:linear-gradient(90deg,#12706b,#0d5c58)}
+.bar.cs{background:linear-gradient(90deg,#c9ced4,#aeb5bc)}
+.find{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line-2)}
+.find:last-child{border-bottom:none}
+.tag{flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;height:fit-content;margin-top:2px}
+.tag.good{background:var(--good-bg);color:var(--good);border:1px solid var(--good-line)}
+.tag.warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.tag.bad{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad-line)}
+.find .ft{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.find .fd{color:var(--ink-2);font-size:13px}
+.clause{border-bottom:1px solid var(--line-2);padding:15px 18px}
+.clause:last-child{border-bottom:none}
+.ch{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.cref{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);padding:2px 7px;border-radius:4px;border:1px solid #cfe4e2}
+.ctitle{font-weight:600;font-size:13.5px}
+blockquote{border-left:2.5px solid var(--line);padding:2px 0 2px 13px;margin:9px 0;color:var(--ink-2);
+  font-size:12.5px;font-style:italic;line-height:1.6}
+.rel{font-size:13px;color:var(--ink-2)}
+.src{font-size:11px;color:var(--faint);margin-top:7px;font-family:ui-monospace,Menlo,monospace}
+.tl{position:relative;padding-left:26px}
+.tl:before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:1px;background:var(--line)}
+.tli{position:relative;padding:0 0 20px}
+.tli:before{content:"";position:absolute;left:-24px;top:5px;width:9px;height:9px;border-radius:50%;
+  background:var(--card);border:2px solid var(--line-2);box-shadow:0 0 0 3px var(--bg)}
+.tli.critical:before{border-color:var(--bad);background:var(--bad)}
+.tli.risk:before{border-color:var(--warn);background:var(--warn)}
+.tli .td{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.03em}
+.tli .te{font-size:13.5px;font-weight:500;margin:2px 0}
+.tli .tm{font-size:11.5px;color:var(--faint);font-family:ui-monospace,Menlo,monospace}
+.tli .tn{font-size:12.5px;color:var(--ink-2);margin-top:5px;padding:8px 11px;background:var(--panel);
+  border-radius:6px;border-left:2px solid var(--warn)}
+.rec{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-2)}
+.rec:last-child{border-bottom:none}
+.recn{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;border:1px solid #cfe4e2}
+.rec h4{font-size:13.5px;font-weight:600;margin-bottom:4px}
+.rec p{font-size:12.5px;color:var(--ink-2)}
+.rec .when{font-size:11px;color:var(--warn);font-weight:500;margin-top:5px}
+.doc{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:44px 50px;max-width:900px;margin:0 auto}
+.doc h3{font-size:17px;font-weight:600;text-align:center;line-height:1.4;margin-bottom:4px}
+.doc .dsub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:24px}
+.doc .meta2{display:grid;grid-template-columns:130px 1fr;gap:5px 14px;font-size:12.5px;
+  padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:22px}
+.doc .meta2 dt{color:var(--faint);font-size:11.5px}
+.doc h4{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);font-weight:600;
+  margin:22px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--line-2)}
+.doc ol,.doc ul{padding-left:20px;font-size:12.5px;color:var(--ink-2)}
+.doc li{margin-bottom:6px}
+.doc table{font-size:12px;margin:10px 0}
+.doc .sign{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:26px}
+.doc .sig{border-top:1px solid var(--ink-2);padding-top:6px;font-size:11.5px;color:var(--muted);margin-top:44px}
+.doc .sig b{display:block;color:var(--ink);font-size:12px;margin-bottom:1px}
+.toolbar{display:flex;gap:9px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+input[type=search],input[type=text],input[type=password],select,textarea{font-family:inherit;font-size:12.5px;
+  padding:8px 11px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);
+  outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:2px}
+.seg button{background:none;border:none;font-size:12px;padding:5px 11px;border-radius:5px;cursor:pointer;
+  color:var(--muted);font-weight:500}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.07)}
+.note{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 15px;
+  font-size:12.5px;color:var(--warn);margin-bottom:14px}
+.note.info{background:var(--accent-soft);border-color:#cfe4e2;color:var(--accent)}
+.note b{font-weight:600}
+.check{display:flex;gap:9px;align-items:flex-start;padding:9px 0;font-size:12.5px;border-bottom:1px solid var(--line-2)}
+.check:last-child{border-bottom:none}
+.check .ic{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10px;font-weight:700;margin-top:1px}
+.ic.ok{background:var(--good-bg);color:var(--good)}
+.ic.no{background:var(--bad-bg);color:var(--bad)}
+.empty{padding:44px 30px;text-align:center;color:var(--faint);font-size:13px}
+.empty b{display:block;color:var(--ink-2);font-size:14px;font-weight:500;margin-bottom:6px}
+.foot{color:var(--faint);font-size:11.5px;text-align:center;padding:26px 0 0;border-top:1px solid var(--line);margin-top:34px}
+
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(20,23,26,.34);display:flex;align-items:flex-start;
+  justify-content:center;padding:70px 20px;z-index:200;overflow-y:auto}
+.modal{background:var(--card);border-radius:12px;width:100%;max-width:520px;padding:24px 26px;
+  box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.modal .msub{color:var(--muted);font-size:12.5px;margin-bottom:18px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.field .hint{font-size:11px;color:var(--faint);margin-top:4px}
+.modal .foot2{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+
+/* ---------- progress ---------- */
+.prog{background:var(--panel);border-radius:8px;padding:13px 15px;font-size:12.5px;margin-top:12px}
+.prog .bar2{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:9px}
+.prog .bar2 i{display:block;height:100%;width:38%;background:var(--accent);border-radius:2px;
+  animation:slide 1.15s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(360%)}}
+.prog .msg{color:var(--ink-2)}
+.prog.err{background:var(--bad-bg);color:var(--bad)}
+.prog.done{background:var(--good-bg);color:var(--good)}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:300;
+  max-width:min(640px,92vw);padding:12px 16px;border-radius:9px;font-size:12.5px;line-height:1.5;
+  background:var(--ink);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.22);
+  opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.toast.in{opacity:1;transform:translate(-50%,0)}
+.toast.warn{background:var(--warn);color:#fff}
+.toast.bad{background:var(--bad);color:#fff}
+.toast.good{background:var(--good);color:#fff}
+
+@media(max-width:900px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .wfrow{grid-template-columns:110px 1fr 100px}
+  .doc{padding:26px 22px}
+  main,.hwrap{padding-left:16px;padding-right:16px}
+  .row2{grid-template-columns:1fr}
+}
+@media print{
+  header,.tabs,.toolbar,.btn,.seg{display:none!important}
+  body{background:#fff}
+  .doc,.card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="logo" onclick="go('#/')"><span class="dot"></span>QS Document Intelligence</div>
+    <div class="crumb" id="crumb"></div>
+    <div class="spacer"></div>
+    <span class="mode" id="mode">connecting</span>
+    <button class="btn ghost sm" onclick="openSettings()">Settings</button>
+  </div>
+</header>
+<main id="main"></main>
+<div id="modal"></div>
+<div id="toast" class="toast"></div>
+
+<script id="demo" type="application/json">{"project":{"name":"Zung Fu Retail Network Project at Ka Yip Street, Chai Wan","contract":"Enabling Works","site":"Chivas Godown, 50 Ka Yip Street, Chai Wan, Hong Kong","employer":"Apollo Luck Limited","contractor":"Kin Shing (Leung's) General Contractors Limited","architect":"Aedas Limited","qs":"Currie \u0026 Brown (China) Limited","pm":"Arcadis Asia Limited","structural":"JMK Consulting Engineers Limited","form":"HKIA Standard Form of Building Contract, Private Edition — Without Quantities, 2006 Edition","doc_ref":"W/114105/CWEW","project_no":"160141-00:G6","contract_sum":16180000.0,"currency":"HKD","governing_law":"Hong Kong","contract_date":"December 2016"},"stats":{"documents":7,"total_pages":1059,"drawings":45,"line_items":118,"additions_items":40,"omissions_items":78,"additions":16463999.97,"omissions":-6334222.27,"nett":10129777.7,"star_value":14254780.0,"star_items":11,"tendered_value":2209219.97,"tendered_items":29,"star_pct":86.6,"chiller":13451946.0,"chiller_pct":81.7,"contract_sum":16180000.0,"revised_contract_sum":26309777.7,"pct":62.6},"documents":[{"id":"ai","file":"AI-EW-002.pdf","type":"Architect's Instruction","role":"The variation instruction itself","pages":24,"text_layer":"partial","ref":"AI-EW-002","date":"2017-04-26","status":"Signed","sort_order":1,"note":"Letter p.1 + 22 enclosed drawing sheets. Pages 2-17 carry a text layer (title blocks only); pages 18-24 are scanned."},{"id":"asm","file":"AI-EW-002_Assessment_171222.pdf","type":"VO Assessment / Valuation","role":"QS valuation of the instruction","pages":34,"text_layer":"yes","ref":"AI-EW-002 (Summary)","date":"2017-12-22","status":"Assessed","sort_order":2,"note":"Priced schedule: 40 addition items, 78 omission items, plus 5 marked-up E\u0026M Schedule of Rates pages."},{"id":"c1","file":"Contract Booklet (1of2).pdf","type":"Contract — Conditions","role":"Articles, General \u0026 Special Conditions","pages":393,"text_layer":"no (scanned)","ref":"W/114105/CWEW","date":"2016-12","status":"Executed","sort_order":3,"note":"HKIA Standard Form 2006 Private Edition Without Quantities. GCC clauses 1-41 + index; SCC/1-SCC/55; correspondence; Conditions \u0026 Form of Tender."},{"id":"c2","file":"Contract Booklet (2of2).pdf","type":"Contract — Specification \u0026 Rates","role":"Technical specification, Schedule of Rates, Appendices","pages":563,"text_layer":"no (scanned)","ref":"W/114105/CWEW","date":"2016-12","status":"Executed","sort_order":4,"note":"Architectural TS/01, Structural TS/02, Ironmongery TS/03, M\u0026E TS/04; Schedule of Rates S1-S6; Summary of Tender ST/1; Appendix A drawings; Appendix B E\u0026M rates."},{"id":"dwg_archi","file":"CWEW_ContractDwg_Archi_170627.pdf","type":"Contract Drawings — Architectural","role":"25 architectural sheets","pages":25,"text_layer":"yes","ref":"AED141_TC_*","date":"2016-10-14 to 2017-11-17","status":"Tender submission","sort_order":5,"note":"Matches Appendix A Schedule of Contract Drawings exactly (25 sheets, same order)."},{"id":"dwg_struct","file":"CWEW_ContractDwg_Structural_170627.pdf","type":"Contract Drawings — Structural","role":"6 structural sheets (JMK)","pages":6,"text_layer":"no (scanned)","ref":"1623/*","date":"2017-06-27 (file date)","status":"Contract drawing","sort_order":6,"note":"1623/TP/01, 1623/EN/AA/01-03, 1623/EN/LT/01, 1623/EN/ST/05."},{"id":"dwg_em","file":"CWEW_ContractDwg_E\u0026M_170627.pdf","type":"Contract Drawings — MEP","role":"14 MEP sheets","pages":14,"text_layer":"no (scanned)","ref":"201623(EN)/*","date":"2017-06-27 (file date)","status":"Contract drawing","sort_order":7,"note":"Drainage DS-1/01-04, Fire Services FS-1/01-04, Electrical EL-1/01-05, HF/TCW/9657."}],"drawings":[{"no":"AED141_TC_0001","title":"GENERAL NOTES, LEGEND, LOCATION PLAN, DRAWING LIST \u0026 ABBREVIATIONS","discipline":"Architectural","date":"2016-10-14","scale":null,"status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_0002","title":"MATERIAL LIST","discipline":"Architectural","date":"2016-10-14","scale":null,"status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_1000","title":"GROUND FLOOR PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_1001","title":"FIRST FLOOR PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_1002","title":"SECOND FLOOR PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_1003","title":"THIRD FLOOR LAYOUT PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_1004","title":"FOURTH FLOOR LAYOUT PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_3000","title":"SECTIONS","discipline":"Architectural","date":"2016-10-14","scale":"1:100@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_4000","title":"GROUND FLOOR ENLARGED PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:100@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_4001","title":"FIRST FLOOR ENLARGED PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:100@A1","status":"TENDER SUBMISSION","in_ai":true,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_4002","title":"SECOND FLOOR ENLARGED PLAN","discipline":"Architectural","date":"2016-10-14","scale":"1:100@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_6800","title":"TYPICAL SIGNAGE DETAILS","discipline":"Architectural","date":"2016-10-14","scale":null,"status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_8000","title":"DOOR ELEVATIONS","discipline":"Architectural","date":"2016-10-14","scale":"1:20@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_8010","title":"TYPICAL DOOR DETAILS (CORRIDOR)","discipline":"Architectural","date":"2016-10-14","scale":"1:2@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E100","title":"GROUND FLOOR DEMOLITION PLAN","discipline":"Architectural","date":"2016-11-17","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E101","title":"FIRST FLOOR DEMOLITION PLAN","discipline":"Architectural","date":"2016-11-17","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E102","title":"SECOND FLOOR DEMOLITION PLAN","discipline":"Architectural","date":"2016-11-17","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E103","title":"THIRD FLOOR DEMOLITION PLAN","discipline":"Architectural","date":"2016-11-17","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E200","title":"EXISTING FRONT ELEVATION","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E201","title":"EXISTING BACK ELEVATION","discipline":"Architectural","date":"2016-11-17","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED141_TC_E202","title":"EXISTING SIDE ELEVATION","discipline":"Architectural","date":"2016-10-14","scale":"1:200@A1","status":"TENDER SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED_160141-00_GB_H001","title":"HOARDING GENERAL NOTES, BLOCK PLAN, ELEVATIONS","discipline":"Architectural","date":"2016-07-29","scale":null,"status":"BD SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED_160141-00_GB_H002","title":"ELEVATIONS AND SECTIONS","discipline":"Architectural","date":"2016-07-29","scale":null,"status":"BD SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED_160141-00_GB_H003","title":"HOARDING BLOCK PLAN / SETTING OUT","discipline":"Architectural","date":"2016-07-29","scale":null,"status":"BD SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"AED_160141-00_GB_H004","title":"ELEVATIONS AND SECTIONS","discipline":"Architectural","date":"2016-07-29","scale":null,"status":"BD SUBMISSION","in_ai":false,"source":"Contract Dwg set / Appendix A"},{"no":"1623/TP/01","title":"General Notes and Typical Details","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":true,"source":"Appendix A"},{"no":"1623/EN/AA/01","title":"Removal Works at G/F","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":true,"source":"Appendix A"},{"no":"1623/EN/AA/02","title":"Removal Works at 1/F","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":true,"source":"Appendix A"},{"no":"1623/EN/AA/03","title":"Removal Works at 2/F \u0026 3/F","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":true,"source":"Appendix A"},{"no":"1623/EN/LT/01","title":"Details for Lift L3","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"1623/EN/ST/05","title":"Temporary Staircase from G/F to 3/F","discipline":"Structural","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/DS-1/01","title":"Drainage Layout Plan for G/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/DS-1/02","title":"Drainage Layout Plan for 1/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/DS-1/03","title":"Drainage Layout Plan for 2/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/DS-1/04","title":"Drainage Layout Plan for 3/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/FS-1/01","title":"Fire Services Layout Plan for G/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/FS-1/02","title":"Fire Services Layout Plan for 1/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/FS-1/03","title":"Fire Services Layout Plan for 2/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/FS-1/04","title":"Fire Services Layout Plan for 3/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/EL-1/01","title":"Temporary Lighting Layout Plan for G/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/EL-1/02","title":"Temporary Lighting Layout Plan for 1/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/EL-1/03","title":"Temporary Lighting Layout Plan for 2/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/EL-1/04","title":"Temporary Lighting Layout Plan for 3/F","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"201623(EN)/EL-1/05","title":"MVAC \u0026 Electrical Provision to Office","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"},{"no":"HF/TCW/9657","title":"Electrical Schematic Wiring Diagram","discipline":"MEP","date":null,"scale":null,"status":"Contract drawing","in_ai":false,"source":"Appendix A"}],"dates":[{"date":"2012-07-06","event":"Original floor plans drawn","doc":"AED_160141-00_GB_1001 / 1002 / 1008","kind":"drawing","flag":"risk","note":"These sheets are dated 2012 yet were enclosed with a 2017 instruction — 4 years 9 months old at issue. Confirm they remain current."},{"date":"2016-07-29","event":"Hoarding drawings issued (BD submission)","doc":"AED_160141-00_GB_H001-H004","kind":"drawing","flag":null,"note":null},{"date":"2016-10-14","event":"Facade tender drawings issued","doc":"AED141_TC_0001 - TC_4010","kind":"drawing","flag":null,"note":null},{"date":"2016-11-17","event":"Demolition plans \u0026 back elevation revised","doc":"AED141_TC_E100-E103, E201","kind":"drawing","flag":null,"note":null},{"date":"2016-12-12","event":"Demolition plans E113-E116 drawn","doc":"AED141_TC_E113-E116","kind":"drawing","flag":null,"note":null},{"date":"2016-12-31","event":"Contract documents dated December 2016","doc":"Contract Booklets 1of2 \u0026 2of2","kind":"contract","flag":null,"note":"Contract Sum HK$16,180,000.00 per Article 2."},{"date":"2017-02-24","event":"Layout plans GB_1000, GB_1003-GB_1007 issued","doc":"AED_160141-00_GB_1000 / 1003-1007","kind":"drawing","flag":null,"note":null},{"date":"2017-04-19","event":"Demolition plans E110-E116 issued (tender drawing)","doc":"AED141_TC_E110-E116","kind":"drawing","flag":null,"note":null},{"date":"2017-04-26","event":"AI-EW-002 issued by the Architect","doc":"AI-EW-002, signed Edward Y W Leung, Associate Director, Aedas","kind":"instruction","flag":"critical","note":"Box ticked: 'Carry out the said works and submit a detailed claim, in accordance with the contract terms, for assessment and valuation'. Time and cost implication acknowledged."},{"date":"2017-12-22","event":"AI-EW-002 Assessment issued","doc":"AI-EW-002 (Summary) / AI-EW-002","kind":"valuation","flag":"critical","note":"240 days after the instruction. Nett valuation HK$10,129,777.70."}],"clauses":[{"ref":"Cl. 13.1(1)","title":"Architect's authority to issue a Variation","quote":"The Architect may issue an instruction requiring a Variation…","relevance":"The AI-EW-002 is issued under this clause. The AI identifies itself as an Architect's Instruction and ticks the cost-implication route.","importance":"high","source":"GCC p.29 (Booklet 1, PDF p.34)"},{"ref":"Cl. 13.1(1)(a)-(c)","title":"Limits on instructing Variations — DELETED by SCC","quote":"SCC Clause 13: 'DELETE the words \"provided that:\" in the first line of clause 13.1(1). DELETE clauses 13.1(1)(a), (b) and (c).'","relevance":"The usual cap that 'the accumulation of instructions shall not fundamentally change the scope or nature of the Works' does NOT apply to this contract. A nett variation worth 62.6% of the Contract Sum is therefore not, of itself, an invalid instruction.","importance":"critical","source":"SCC/7 (Booklet 1, PDF p.128)"},{"ref":"Cl. 13.1(4)","title":"Omission of work for others — no loss of profit (added by SCC)","quote":"…the Contractor shall not be entitled to any loss of profit or losses and expenses of whatsoever nature arising from the omission of works… Such omission shall be valued at the rates contained in the Schedule of Quantities and Rates.","relevance":"Directly governs the HK$6.33m of omissions. No loss of profit is recoverable on omitted work, and omissions must be valued at SOR rates.","importance":"critical","source":"SCC/7 (Booklet 1, PDF p.128)"},{"ref":"Cl. 13.3","title":"Valuation of Contractor's work","quote":"The Quantity Surveyor shall measure and value work carried out by the Contractor in response to an Architect's instruction under (a) clause 13.1 requiring a Variation…","relevance":"The contractual basis for the QS assessment. The assessment is the QS's valuation, not the Architect's decision.","importance":"high","source":"GCC p.30 (PDF p.35)"},{"ref":"Cl. 13.4(1)(i)-(iii)","title":"Valuation rules — the rate cascade","quote":"(i) where the work is the same as or similar in character to… work priced in the Schedule of Quantities and Rates… the rates… shall determine the Valuation; (ii)… with a fair adjustment for the difference in conditions or quantity; (iii) where the work is not the same as or similar… the work shall be valued at fair rates.","relevance":"This is the test for every one of the 118 line items. The assessment uses SOR rates (^) for similar work and 'star rates' (*) for work with no SOR equivalent — which maps onto 13.4(1)(i) and 13.4(1)(iii) respectively.","importance":"critical","source":"GCC p.31 (PDF p.36)"},{"ref":"Cl. 13.4(1)(iv)","title":"'Conditions' means physical, not financial","quote":"the word 'conditions' in clause 13.4(1) shall mean physical conditions and not financial conditions.","relevance":"Blocks any argument that market pricing or financial hardship justifies adjusted SOR rates.","importance":"medium","source":"GCC p.31 (PDF p.36)"},{"ref":"Cl. 13.4(5)","title":"Allowance for lump sum / percentage adjustment","quote":"An appropriate allowance shall be made in a Valuation under clause 13.4 for any percentage or lump sum adjustment made to the Schedule of Quantities and Rates.","relevance":"The contractual authority for applying the (-)6.92% tender discount to tendered rates. The assessment does this correctly (marked ^).","importance":"critical","source":"GCC p.32 (PDF p.37)"},{"ref":"Cl. 13.4(3)","title":"Valuation of omissions","quote":"(a) the rates for the work in the Schedule of Quantities and Rates shall determine the Valuation of the work omitted; and (b) if… the Contractor has reasonably incurred expense which has become wholly or partly unnecessary as a result of the omission… a fair adjustment shall be made.","relevance":"The omissions are valued at SOR rates. 13.4(3)(b) is the only route to an addition for wasted expense — and it is narrowed by SCC.","importance":"high","source":"GCC p.32 (PDF p.37)"},{"ref":"Cl. 13.4(3) proviso (SCC)","title":"No adjustment where omission flows from reduced provisional items","quote":"Provided that no such adjustment shall be made if the omission of work is due to reduction of work covered by Provisional Quantities, Provisional Items or a Provisional Sum.","relevance":"Eight omission items are annotated 'Included in adjustment of provisional quantities'. This proviso closes off any wasted-expense claim on them.","importance":"high","source":"SCC/7 (PDF p.128)"},{"ref":"Cl. 13.4(9)","title":"No delay or disruption cost inside a valuation","quote":"No allowance is to be made under clause 13.4 for direct loss and/or expense due to delay to the progress of the Works, disruption, or any other cause for which the Contractor can be reimbursed… under any other provision.","relevance":"The HK$10.13m is measured value only. Prolongation, disruption and loss of productivity must be claimed separately under clause 27 — and cannot be double-counted here.","importance":"critical","source":"GCC p.32 (PDF p.37)"},{"ref":"Cl. 13.4(6)","title":"New rates where other work is affected","quote":"If compliance with a Variation… substantially changes the conditions under which other work is carried out, and results in the rates… becoming unreasonable or inapplicable, then new rates shall be determined…","relevance":"The route for the Contractor to argue that existing rates are no longer valid because of the new plant rooms. Needs substantiation; the burden is on the claimant.","importance":"medium","source":"GCC p.32 (PDF p.37)"},{"ref":"Cl. 13.7","title":"Variation caused by Contractor's fault","quote":"If and to the extent that an instruction requiring a Variation arose as a result of a breach of contract or other default by the Contractor… the Quantity Surveyor shall take the effect of the breach or default into account in the Valuation.","relevance":"Relevant to the MF slab demolition and the temporary staircase items — check whether either was caused by contractor default or a construction error.","importance":"medium","source":"GCC p.33 (PDF p.38)"},{"ref":"Cl. 15","title":"Adjustment of Contract Sum","quote":"The Contract Sum stated in Article 2 shall only be adjusted in accordance with the Contract and as soon as the amount of the adjustment is calculated… the amount so calculated shall be taken into account in the next Interim Certificate.","relevance":"The HK$10.13m must be carried into the next Interim Certificate once calculated — it does not wait for the final account.","importance":"high","source":"GCC p.33 (PDF p.38)"},{"ref":"Cl. 28.1(1)","title":"Notice of claim — 28 days","quote":"…the Contractor shall give notice to the Architect of his intention to do so within 28 days of it becoming apparent… that an event has occurred which gives rise to a claim…","relevance":"The general notice time-bar.","importance":"high","source":"GCC p.55 (PDF p.60)"},{"ref":"Cl. 28.1(2)","title":"Notice not required for a clause 13.1 instruction","quote":"The Contractor need not give the notice required under clause 28.1(1) in the case of an Architect's instruction under clauses 13.1 or 13.[2]","relevance":"Critical to the validity of this VO: because AI-EW-002 is a clause 13.1 instruction, the 28-day notice does not apply. The 240-day gap between instruction and assessment is therefore not, by itself, a time-bar failure.","importance":"critical","source":"GCC p.55 (PDF p.60)"},{"ref":"Cl. 28.2","title":"Particulars within 60 days","quote":"…within 60 days of giving notice under clause 28.1, submit to the Architect: particulars… the amount of the claim… a detailed build-up… and a copy of the records…","relevance":"Still potentially live. Confirm the Contractor's detailed claim and build-up were submitted, and when.","importance":"high","source":"GCC p.56 (PDF p.61)"},{"ref":"Cl. 28.3","title":"Condition precedent — claim waived if not complied with","quote":"It shall be a condition precedent to the Contractor's entitlement to additional payment that the Contractor shall comply with the provisions of clauses 28.1 and 28.2 and if he fails to comply… that claim will be deemed to have been waived.","relevance":"The single most important procedural clause for the Contractor's position. Verify compliance before the VO is finalised.","importance":"critical","source":"GCC p.56 (PDF p.61)"},{"ref":"Cl. 5.1(2) (SCC)","title":"Precedence of documents","quote":"…the Contract Drawings and the Specification shall take precedence over the Schedule of Quantities and Rates.","relevance":"Where an SOR description and a drawing conflict, the drawing wins. Use this to resist rate arguments that rely on SOR wording alone.","importance":"high","source":"SCC (Booklet 1, PDF p.125)"},{"ref":"Cl. 2.4(1) \u0026 (3) (SCC)","title":"Contractor must notify ambiguities 7 days before","quote":"…the Contractor shall inform the Architect at least 7 days before the Contractor carries out any part of the works in relation to which he finds an ambiguity or discrepancy…","relevance":"Limits the Contractor's EOT and loss/expense entitlement where a discrepancy existed but was not notified. Useful counter-argument to any claim built on drawing/spec inconsistency.","importance":"medium","source":"SCC (Booklet 1, PDF p.124)"}],"vo":{"summary":{"additions":16463999.97,"omissions":-6334222.27,"nett":10129777.7,"pct_of_contract":62.6,"revised_contract_sum":26309777.7},"items":[{"no":1,"part":"ADDITIONS","section":"MF Demolition","description":"Taking down and cart away existing MF slab, including propping","qty":1.0,"unit":"item","rate":325314.6,"amount":325314.6,"page":2,"rate_basis":"tendered","calc":325314.6,"diff":0.0},{"no":2,"part":"ADDITIONS","section":"MF Demolition","description":"Taking down and cart away existing wall at MF","qty":552.3,"unit":"m2","rate":81.21,"amount":44852.28,"page":2,"rate_basis":"tendered","calc":44852.28,"diff":0.0},{"no":3,"part":"ADDITIONS","section":"MF Demolition","description":"Taking down and cart away existing sanitary ware at MF","qty":1.0,"unit":"item","rate":6701.76,"amount":6701.76,"page":2,"rate_basis":"tendered","calc":6701.76,"diff":0.0},{"no":4,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Excavation for 300mm depth","qty":12.7,"unit":"m3","rate":279.24,"amount":3546.35,"page":2,"rate_basis":"tendered","calc":3546.35,"diff":0.0},{"no":5,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Extra over for breaking up and remove existing on-grade slab","qty":6.4,"unit":"m3","rate":744.64,"amount":4765.7,"page":2,"rate_basis":"tendered","calc":4765.7,"diff":0.0},{"no":6,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Disposal of excavated material","qty":12.7,"unit":"m3","rate":372.32,"amount":4728.46,"page":2,"rate_basis":"tendered","calc":4728.46,"diff":0.0},{"no":7,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Concrete - On-grade slab (Grade 45)","qty":6.4,"unit":"m3","rate":1442.74,"amount":9233.54,"page":2,"rate_basis":"tendered","calc":9233.54,"diff":0.0},{"no":8,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Concrete - Suspended slab and beam (Grade 45)","qty":19.3,"unit":"m3","rate":1442.74,"amount":27844.88,"page":2,"rate_basis":"tendered","calc":27844.88,"diff":0.0},{"no":9,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Reinforcement bar","qty":2981.0,"unit":"kg","rate":9.31,"amount":27753.11,"page":2,"rate_basis":"tendered","calc":27753.11,"diff":0.0},{"no":10,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Drill-in T-10 bar","qty":13.0,"unit":"kg","rate":27.92,"amount":362.96,"page":2,"rate_basis":"tendered","calc":362.96,"diff":0.0},{"no":11,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Mass concrete (Grade 20)","qty":66.3,"unit":"m3","rate":1256.58,"amount":83311.25,"page":2,"rate_basis":"tendered","calc":83311.25,"diff":0.0},{"no":12,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Formwork (Vertical)","qty":60.4,"unit":"m2","rate":465.4,"amount":28110.16,"page":2,"rate_basis":"tendered","calc":28110.16,"diff":0.0},{"no":13,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Formwork (Vertical; n.e. 300mm wide)","qty":62.2,"unit":"m","rate":186.16,"amount":11579.15,"page":2,"rate_basis":"tendered","calc":11579.15,"diff":0.0},{"no":14,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Formwork (Horizontal)","qty":143.0,"unit":"m2","rate":1396.2,"amount":199656.6,"page":2,"rate_basis":"tendered","calc":199656.6,"diff":0.0},{"no":15,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"150mm thick hardcore for on-grade slab","qty":42.4,"unit":"m2","rate":300.0,"amount":12720.0,"page":2,"rate_basis":"star","calc":12720.0,"diff":0.0},{"no":16,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Polythene sheet for on-grade slab","qty":42.4,"unit":"m2","rate":150.0,"amount":6360.0,"page":2,"rate_basis":"star","calc":6360.0,"diff":0.0},{"no":17,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"A193 wire mesh for on-grade slab","qty":42.4,"unit":"m2","rate":150.0,"amount":6360.0,"page":2,"rate_basis":"star","calc":6360.0,"diff":0.0},{"no":18,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"100mm blockwall, 2 hours FRP","qty":199.2,"unit":"m2","rate":670.18,"amount":133499.86,"page":3,"rate_basis":"tendered","calc":133499.86,"diff":0.0},{"no":19,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Structural steelworks (SB10, SB11)","qty":7598.0,"unit":"kg","rate":37.23,"amount":282873.54,"page":3,"rate_basis":"tendered","calc":282873.54,"diff":0.0},{"no":20,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Firecut FM-900 fire proof paint to structural steelworks","qty":122.0,"unit":"m2","rate":651.56,"amount":79490.32,"page":3,"rate_basis":"tendered","calc":79490.32,"diff":0.0},{"no":21,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"350 x 350 x 12mm thk GMS base plate","qty":12.0,"unit":"nr.","rate":255.41,"amount":3064.92,"page":3,"rate_basis":"tendered","calc":3064.92,"diff":0.0},{"no":22,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"450 x 650 x 12mm thk GMS base plate","qty":2.0,"unit":"nr.","rate":609.86,"amount":1219.72,"page":3,"rate_basis":"tendered","calc":1219.72,"diff":0.0},{"no":23,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"M10 anchor bolts","qty":64.0,"unit":"nr.","rate":130.31,"amount":8339.84,"page":3,"rate_basis":"tendered","calc":8339.84,"diff":0.0},{"no":24,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Screeding hardener to floor","qty":117.2,"unit":"m2","rate":270.0,"amount":31644.0,"page":3,"rate_basis":"star","calc":31644.0,"diff":0.0},{"no":25,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"C/s screeding to receive paint for ceiling","qty":117.2,"unit":"m2","rate":186.16,"amount":21817.95,"page":3,"rate_basis":"tendered","calc":21817.95,"diff":0.0},{"no":26,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Emulsion paint to ceiling","qty":117.2,"unit":"m2","rate":139.62,"amount":16363.46,"page":3,"rate_basis":"tendered","calc":16363.46,"diff":0.0},{"no":27,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"C/s rendering to receive paint to wall","qty":238.7,"unit":"m2","rate":186.16,"amount":44436.39,"page":3,"rate_basis":"tendered","calc":44436.39,"diff":0.0},{"no":28,"part":"ADDITIONS","section":"Builder's Works for TX Room + HV Room + FS Room","description":"Emulsion paint to wall","qty":238.7,"unit":"m2","rate":139.62,"amount":33327.29,"page":3,"rate_basis":"tendered","calc":33327.29,"diff":0.0},{"no":29,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"100mm blockwall, 2 hours FRP","qty":451.6,"unit":"m2","rate":670.18,"amount":302653.29,"page":3,"rate_basis":"tendered","calc":302653.29,"diff":0.0},{"no":30,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"Screeding hardener to floor","qty":454.5,"unit":"m2","rate":270.0,"amount":122715.0,"page":3,"rate_basis":"star","calc":122715.0,"diff":0.0},{"no":31,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"C/s screeding to receive paint for ceiling","qty":454.5,"unit":"m2","rate":186.16,"amount":84609.72,"page":3,"rate_basis":"tendered","calc":84609.72,"diff":0.0},{"no":32,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"Emulsion paint to ceiling","qty":454.5,"unit":"m2","rate":139.62,"amount":63457.29,"page":3,"rate_basis":"tendered","calc":63457.29,"diff":0.0},{"no":33,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"C/s rendering to receive paint to wall","qty":1093.7,"unit":"m2","rate":186.16,"amount":203603.19,"page":3,"rate_basis":"tendered","calc":203603.19,"diff":0.0},{"no":34,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"Emulsion paint to wall","qty":1093.7,"unit":"m2","rate":139.62,"amount":152702.39,"page":3,"rate_basis":"tendered","calc":152702.39,"diff":0.0},{"no":35,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"Metal door with all ironmongery (single leaf)","qty":5.0,"unit":"nr.","rate":20000.0,"amount":100000.0,"page":4,"rate_basis":"star","calc":100000.0,"diff":0.0},{"no":36,"part":"ADDITIONS","section":"Chiller plant room / Emergency generator room / fuel tank room","description":"Hacking off existing finishes to floor, ceiling and wall","qty":1486.9,"unit":"m2","rate":150.0,"amount":223035.0,"page":4,"rate_basis":"star","calc":223035.0,"diff":0.0},{"no":37,"part":"ADDITIONS","section":"Temporary manhole at G/F","description":"Temporary manhole; including all necessary excavation, disposal and backfilling, concrete blindings, benchings and channels, steel reinforcement, formwork, manhole cover, cement and sand rendering, connection to drains and pipes, painting, etc.","qty":2.0,"unit":"nr.","rate":50000.0,"amount":100000.0,"page":4,"rate_basis":"star","calc":100000.0,"diff":0.0},{"no":38,"part":"ADDITIONS","section":"Chiller plant / pipe within plant room","description":"Chiller plant + pipework (refer markup on E\u0026M SOR, including all P\u0026O)","qty":1.0,"unit":"item","rate":13451946.0,"amount":13451946.0,"page":4,"rate_basis":"star","calc":13451946.0,"diff":0.0},{"no":39,"part":"ADDITIONS","section":"Misc.","description":"Levy","qty":1.0,"unit":"item","rate":150000.0,"amount":150000.0,"page":4,"rate_basis":"star","calc":150000.0,"diff":0.0},{"no":40,"part":"ADDITIONS","section":"Misc.","description":"ECI","qty":1.0,"unit":"item","rate":50000.0,"amount":50000.0,"page":4,"rate_basis":"star","calc":50000.0,"diff":0.0},{"no":1,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Revised details of covered walkway (SOR ref. S3/4/A)","qty":null,"unit":null,"rate":null,"amount":null,"page":30,"rate_basis":null},{"no":2,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Hoarding (SOR ref. S3/5/A)","qty":null,"unit":null,"rate":null,"amount":null,"page":30,"rate_basis":null},{"no":3,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Demolition of external wall (GF)","qty":-79.6,"unit":"m2","rate":744.64,"amount":-59273.34,"page":30,"rate_basis":"tendered","calc":-59273.34,"diff":0.0},{"no":4,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Demolition of external wall (1F \u0026 2F)","qty":null,"unit":null,"rate":null,"amount":null,"page":30,"rate_basis":null},{"no":5,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Demolition of external wall (3F)","qty":null,"unit":null,"rate":null,"amount":null,"page":30,"rate_basis":null},{"no":6,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Demolish and cart away existing r.c. staircases; 1 nr.; GL 4-5/A, from G/F to 3/F","qty":-1.0,"unit":"item","rate":59571.2,"amount":-59571.2,"page":30,"rate_basis":"tendered","calc":-59571.2,"diff":0.0},{"no":7,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Demolish and cart away existing r.c. staircases; 1 nr.; GL 7-8/D-E, from G/F to 3/F","qty":-1.0,"unit":"item","rate":59571.2,"amount":-59571.2,"page":30,"rate_basis":"tendered","calc":-59571.2,"diff":0.0},{"no":8,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Enlarging existing slab opening at GL 6-8/GL B-C","qty":-1.0,"unit":"item","rate":14892.8,"amount":-14892.8,"page":30,"rate_basis":"tendered","calc":-14892.8,"diff":0.0},{"no":9,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Temporary 2 hrs. FRP ceiling enclosure","qty":-1.0,"unit":"item","rate":33508.8,"amount":-33508.8,"page":30,"rate_basis":"tendered","calc":-33508.8,"diff":0.0},{"no":10,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Form 3 nrs. of slab opening; approx. size 6200mm x 4000mm","qty":-1.0,"unit":"item","rate":110802.43,"amount":-110802.43,"page":30,"rate_basis":"tendered","calc":-110802.43,"diff":0.0},{"no":11,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 1000mm x 1000mm (in 15 nrs.)","qty":-1.0,"unit":"item","rate":13403.52,"amount":-13403.52,"page":30,"rate_basis":"tendered","calc":-13403.52,"diff":0.0},{"no":12,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 1500mm x 2000mm (in 8 nrs.)","qty":-1.0,"unit":"item","rate":21445.63,"amount":-21445.63,"page":30,"rate_basis":"tendered","calc":-21445.63,"diff":0.0},{"no":13,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 3000mm x 2200mm (in 2 nrs.)","qty":-1.0,"unit":"item","rate":11793.24,"amount":-11793.24,"page":30,"rate_basis":"tendered","calc":-11793.24,"diff":0.0},{"no":14,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 5000mm x 1000mm (in 11 nrs.)","qty":-1.0,"unit":"item","rate":49146.24,"amount":-49146.24,"page":30,"rate_basis":"tendered","calc":-49146.24,"diff":0.0},{"no":15,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 2000mm x 800mm (in 1 nr.)","qty":-1.0,"unit":"item","rate":2717.94,"amount":-2717.94,"page":30,"rate_basis":"tendered","calc":-2717.94,"diff":0.0},{"no":16,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up external wall opening by 100mm blockwall; approx. size 4000mm x 300mm (in 3 nrs.)","qty":-1.0,"unit":"item","rate":32168.45,"amount":-32168.45,"page":30,"rate_basis":"tendered","calc":-32168.45,"diff":0.0},{"no":17,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Forming opening; approx. 1300mm x 1200mm; as per 1623/EN/ST/05","qty":-1.0,"unit":"item","rate":8377.2,"amount":-8377.2,"page":30,"rate_basis":"tendered","calc":-8377.2,"diff":0.0},{"no":18,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"254 x 254 x 73kg/m universal column","qty":-88.0,"unit":"kg","rate":37.23,"amount":-3276.24,"page":31,"rate_basis":"tendered","calc":-3276.24,"diff":0.0},{"no":19,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"254 x 89 x 35.74kg/m channels","qty":-4385.0,"unit":"kg","rate":37.23,"amount":-163253.55,"page":31,"rate_basis":"tendered","calc":-163253.55,"diff":0.0},{"no":20,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"76 x 38 x 6.7kg/m channels","qty":-150.0,"unit":"kg","rate":37.23,"amount":-5584.5,"page":31,"rate_basis":"tendered","calc":-5584.5,"diff":0.0},{"no":21,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"100 x 100 x 10mm RHS","qty":-335.0,"unit":"kg","rate":37.23,"amount":-12472.05,"page":31,"rate_basis":"tendered","calc":-12472.05,"diff":0.0},{"no":22,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"250 x 150 x 8mm RHS","qty":-301.0,"unit":"kg","rate":37.23,"amount":-11206.23,"page":31,"rate_basis":"tendered","calc":-11206.23,"diff":0.0},{"no":23,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"250 x 150 x 16mm RHS","qty":-1226.0,"unit":"kg","rate":37.23,"amount":-45643.98,"page":31,"rate_basis":"tendered","calc":-45643.98,"diff":0.0},{"no":24,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"500 x 300 x 16mm RHS","qty":-7958.0,"unit":"kg","rate":37.23,"amount":-296276.34,"page":31,"rate_basis":"tendered","calc":-296276.34,"diff":0.0},{"no":25,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"M8 shear studs","qty":-24.0,"unit":"nr.","rate":65.16,"amount":-1563.84,"page":31,"rate_basis":"tendered","calc":-1563.84,"diff":0.0},{"no":26,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"M12 cast-in bolts","qty":-48.0,"unit":"nr.","rate":83.77,"amount":-4020.96,"page":31,"rate_basis":"tendered","calc":-4020.96,"diff":0.0},{"no":27,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"M20 anchor bolts","qty":-74.0,"unit":"nr.","rate":167.54,"amount":-12397.96,"page":31,"rate_basis":"tendered","calc":-12397.96,"diff":0.0},{"no":28,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"M10 anchor bolts","qty":-216.0,"unit":"nr.","rate":130.31,"amount":-28146.96,"page":31,"rate_basis":"tendered","calc":-28146.96,"diff":0.0},{"no":29,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"\"FIRECUT FM-900\" fire proof paint; 1 hr. FRP; to surfaces of structural steelworks","qty":-197.0,"unit":"m2","rate":651.56,"amount":-128357.32,"page":31,"rate_basis":"tendered","calc":-128357.32,"diff":0.0},{"no":30,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Mineral wool; 1 hr. FRP; to soffit of staircase","qty":-42.0,"unit":"m2","rate":300.0,"amount":-12600.0,"page":31,"rate_basis":"tendered","calc":-12600.0,"diff":0.0},{"no":31,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Durasteel plate; 9.5mm thick; to tread and riser","qty":-40.0,"unit":"m2","rate":2513.16,"amount":-100526.4,"page":31,"rate_basis":"tendered","calc":-100526.4,"diff":0.0},{"no":32,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Durasteel plate; 9.5mm thick; to landing","qty":-19.0,"unit":"m2","rate":2513.16,"amount":-47750.04,"page":31,"rate_basis":"tendered","calc":-47750.04,"diff":0.0},{"no":33,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Durasteel plate; 19mm thick; to soffit of staircase","qty":-42.0,"unit":"m2","rate":5026.32,"amount":-211105.44,"page":31,"rate_basis":"tendered","calc":-211105.44,"diff":0.0},{"no":34,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 450 x 300 x 10mm thick base plate","qty":-2.0,"unit":"nr.","rate":223.39,"amount":-446.78,"page":31,"rate_basis":"tendered","calc":-446.78,"diff":0.0},{"no":35,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 250 x 250 x 12mm thick base plate","qty":-12.0,"unit":"nr.","rate":130.31,"amount":-1563.72,"page":32,"rate_basis":"tendered","calc":-1563.72,"diff":0.0},{"no":36,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 250 x 350 x 16mm thick base plate","qty":-12.0,"unit":"nr.","rate":223.39,"amount":-2680.68,"page":32,"rate_basis":"tendered","calc":-2680.68,"diff":0.0},{"no":37,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 150 x 400 x 16mm thick base plate","qty":-12.0,"unit":"nr.","rate":148.93,"amount":-1787.16,"page":32,"rate_basis":"tendered","calc":-1787.16,"diff":0.0},{"no":38,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"","qty":null,"unit":null,"rate":null,"amount":null,"page":32,"rate_basis":null},{"no":39,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 500 x 1250 x 16mm thick base plate","qty":-18.0,"unit":"nr.","rate":1573.05,"amount":-28314.9,"page":32,"rate_basis":"tendered","calc":-28314.9,"diff":0.0},{"no":40,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"GMS plate; 600 x 600 x 16mm thick base plate","qty":-36.0,"unit":"nr.","rate":902.88,"amount":-32503.68,"page":32,"rate_basis":"tendered","calc":-32503.68,"diff":0.0},{"no":41,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blockwall; 100mm thk.; 2 hr. FRP","qty":-1435.0,"unit":"m2","rate":670.18,"amount":-961708.3,"page":32,"rate_basis":"tendered","calc":-961708.3,"diff":0.0},{"no":42,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Timber door set; single leaf door; 1 hr. FRP; approx. size 900 x 2100mm high","qty":-9.0,"unit":"set","rate":10555.27,"amount":-94997.43,"page":32,"rate_basis":"tendered","calc":-94997.43,"diff":0.0},{"no":43,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Timber door set; double leaf door; 1 hr. FRP; approx. size 1500 x 2100mm high","qty":-1.0,"unit":"set","rate":17592.12,"amount":-17592.12,"page":32,"rate_basis":"tendered","calc":-17592.12,"diff":0.0},{"no":44,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Timber door set; double leaf door; 2 hr. FRP; approx. size 1500 x 2100mm high","qty":-1.0,"unit":"set","rate":26388.18,"amount":-26388.18,"page":32,"rate_basis":"tendered","calc":-26388.18,"diff":0.0},{"no":45,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Timber door set; double leaf door; 1 hr. FRP; approx. size 1500 x 2100mm high","qty":-1.0,"unit":"set","rate":26388.18,"amount":-26388.18,"page":32,"rate_basis":"tendered","calc":-26388.18,"diff":0.0},{"no":46,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Glass door set; single leaf door; 1 hr. FRP; approx. size 900 x 2100mm high","qty":-1.0,"unit":"set","rate":15832.91,"amount":-15832.91,"page":32,"rate_basis":"tendered","calc":-15832.91,"diff":0.0},{"no":47,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Concrete; 75mm thick blinding layer","qty":-2.0,"unit":"m3","rate":1116.96,"amount":-2233.92,"page":32,"rate_basis":"tendered","calc":-2233.92,"diff":0.0},{"no":48,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforced Concrete; slab; 200mm thick","qty":-4.0,"unit":"m3","rate":1442.74,"amount":-5770.96,"page":32,"rate_basis":"tendered","calc":-5770.96,"diff":0.0},{"no":49,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforced Concrete; ground beam","qty":-13.0,"unit":"m3","rate":1442.74,"amount":-18755.62,"page":32,"rate_basis":"tendered","calc":-18755.62,"diff":0.0},{"no":50,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforced Concrete; wall; 200mm thick","qty":-36.0,"unit":"m3","rate":1442.74,"amount":-51938.64,"page":32,"rate_basis":"tendered","calc":-51938.64,"diff":0.0},{"no":51,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Sawn formwork; vertical surfaces; sides of wall","qty":-378.0,"unit":"m2","rate":558.48,"amount":-211105.44,"page":32,"rate_basis":"tendered","calc":-211105.44,"diff":0.0},{"no":52,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Sawn formwork; vertical surfaces; sides of ground beam","qty":-11.0,"unit":"m2","rate":465.4,"amount":-5119.4,"page":33,"rate_basis":"tendered","calc":-5119.4,"diff":0.0},{"no":53,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Sawn formwork; vertical surfaces; sides of slab; 200mm wide","qty":-13.0,"unit":"m","rate":186.16,"amount":-2420.08,"page":33,"rate_basis":"tendered","calc":-2420.08,"diff":0.0},{"no":54,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Sawn formwork; horizontal surfaces; soffit of slab","qty":-20.0,"unit":"m2","rate":1396.2,"amount":-27924.0,"page":33,"rate_basis":"tendered","calc":-27924.0,"diff":0.0},{"no":55,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 10mm diameter","qty":-282.0,"unit":"kg","rate":9.31,"amount":-2625.42,"page":33,"rate_basis":"tendered","calc":-2625.42,"diff":0.0},{"no":56,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 12mm diameter","qty":-9495.0,"unit":"kg","rate":9.31,"amount":-88398.45,"page":33,"rate_basis":"tendered","calc":-88398.45,"diff":0.0},{"no":57,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 20mm diameter","qty":-368.0,"unit":"kg","rate":9.31,"amount":-3426.08,"page":33,"rate_basis":"tendered","calc":-3426.08,"diff":0.0},{"no":58,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 25mm diameter","qty":-225.0,"unit":"kg","rate":9.31,"amount":-2094.75,"page":33,"rate_basis":"tendered","calc":-2094.75,"diff":0.0},{"no":59,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 32mm diameter","qty":-1689.0,"unit":"kg","rate":9.31,"amount":-15724.59,"page":33,"rate_basis":"tendered","calc":-15724.59,"diff":0.0},{"no":60,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 10mm diameter; drilled-in bars; including drilling with 200mm depth into concrete and grouting","qty":-21.0,"unit":"kg","rate":27.92,"amount":-586.32,"page":33,"rate_basis":"tendered","calc":-586.32,"diff":0.0},{"no":61,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Reinforcement steel bars; 32mm diameter; drilled-in bars; including drilling with 500mm depth into concrete and grouting","qty":-735.0,"unit":"kg","rate":27.92,"amount":-20521.2,"page":33,"rate_basis":"tendered","calc":-20521.2,"diff":0.0},{"no":62,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Cement and sand screed to receive tactile","qty":null,"unit":null,"rate":null,"amount":null,"page":33,"rate_basis":null},{"no":63,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"300 x 300 homogeneous tactile","qty":null,"unit":null,"rate":null,"amount":null,"page":33,"rate_basis":null},{"no":64,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Cement and sand rendering to receive paint","qty":-2870.0,"unit":"m2","rate":186.16,"amount":-534279.2,"page":33,"rate_basis":"tendered","calc":-534279.2,"diff":0.0},{"no":65,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Emulsion paint (3 coats) on rendered walls","qty":-2870.0,"unit":"m2","rate":139.62,"amount":-400709.4,"page":33,"rate_basis":"tendered","calc":-400709.4,"diff":0.0},{"no":66,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Liquid applied waterproofing material on concrete; horizontal","qty":null,"unit":null,"rate":null,"amount":null,"page":33,"rate_basis":null},{"no":67,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Liquid applied waterproofing material on concrete; vertical","qty":null,"unit":null,"rate":null,"amount":null,"page":33,"rate_basis":null},{"no":68,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Metal railing; 50mm diameter; 1100mm high","qty":-58.0,"unit":"m","rate":2000.0,"amount":-116000.0,"page":34,"rate_basis":"tendered","calc":-116000.0,"diff":0.0},{"no":69,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Supply and fix signages; type S1","qty":-24.0,"unit":"nr.","rate":232.7,"amount":-5584.8,"page":34,"rate_basis":"tendered","calc":-5584.8,"diff":0.0},{"no":70,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Supply and fix signages; type S2","qty":-1.0,"unit":"nr.","rate":186.16,"amount":-186.16,"page":34,"rate_basis":"tendered","calc":-186.16,"diff":0.0},{"no":71,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Supply and fix signages; type S3","qty":-1.0,"unit":"nr.","rate":186.16,"amount":-186.16,"page":34,"rate_basis":"tendered","calc":-186.16,"diff":0.0},{"no":72,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Supply and fix exit signages","qty":null,"unit":null,"rate":null,"amount":null,"page":34,"rate_basis":null},{"no":73,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"E\u0026M Works","qty":-1.0,"unit":"item","rate":913859.44,"amount":-913859.44,"page":34,"rate_basis":"tendered","calc":-913859.44,"diff":0.0},{"no":74,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Blocking up slab opening for existing staircase; approx. 129m2","qty":-1.0,"unit":"item","rate":240146.4,"amount":-240146.4,"page":34,"rate_basis":"tendered","calc":-240146.4,"diff":0.0},{"no":75,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Basic requirements for builder's works for lift shaft","qty":-1.0,"unit":"item","rate":269932.0,"amount":-269932.0,"page":34,"rate_basis":"tendered","sor_ref":"LOA/item iii","calc":-269932.0,"diff":0.0},{"no":76,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Verification of underground conditions","qty":-1.0,"unit":"item","rate":46540.0,"amount":-46540.0,"page":34,"rate_basis":"tendered","sor_ref":"LOA/item v","calc":-46540.0,"diff":0.0},{"no":77,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Requirement on licensed Plumber","qty":-1.0,"unit":"item","rate":46540.0,"amount":-46540.0,"page":34,"rate_basis":"tendered","sor_ref":"LOA/item vii","calc":-46540.0,"diff":0.0},{"no":78,"part":"OMISSIONS","section":"\" ^ \" represent tendered rate with discount factor of (-) 6.92%","description":"Wooden hoarding for 2/F \u0026 3/F","qty":-1.0,"unit":"item","rate":530556.0,"amount":-530556.0,"page":34,"rate_basis":"tendered","sor_ref":"LOA/item viii","calc":-530556.0,"diff":0.0}],"draft":{"vo_no":"VO-EW-002","title":"Variation Order — Additional Scope of Works (Transformer, HV, FS Control, Chiller Plant \u0026 Genset Rooms; M/F Slab Demolition; Temporary Staircase)","instruction_ref":"AI-EW-002","instruction_date":"26 April 2017","valuation_date":"22 December 2017","contract":"Enabling Works for Zung Fu Retail Network Project at Ka Yip Street, Chai Wan","employer":"Apollo Luck Limited","contractor":"Kin Shing (Leung's) General Contractors Limited","architect":"Aedas Limited","qs":"Currie \u0026 Brown (China) Limited","contract_sum":16180000.0,"scope":["Construct New Transformer Room; FS Control \u0026 Control Valve Room and H.V. Room on G/F, including all necessary E\u0026M provision (near Grid Line 12-15/E-F).","Construct New Chiller Plant Room and Genset Room on 8/F, including all necessary E\u0026M provision (near Grid Line 4-7/A-F).","Supply and install Chiller Plant in the Chiller Plant Room on 8/F.","M/F Slab Demolition.","Construction of Temporary Staircase for replacing ST-1 \u0026 ST-2 (construction subject to BD approval)."],"basis":["Clause 13.1 — the Architect issued AI-EW-002 requiring a Variation, with the cost-implication option elected ('carry out the said works and submit a detailed claim… for assessment and valuation').","Clause 13.3 — the Quantity Surveyor has measured and valued the work.","Clause 13.4(1)(i) — work of similar character carried out under similar conditions is valued at Schedule of Quantities and Rates rates.","Clause 13.4(1)(iii) — work with no Schedule equivalent is valued at fair rates ('star rates', marked *).","Clause 13.4(5) — an appropriate allowance is made for the lump sum / percentage adjustment to the Schedule of Rates; the tendered rates are therefore discounted by (-) 6.92% (marked ^).","Clause 13.4(3) — omitted work is valued at Schedule of Quantities and Rates rates. Per the SCC proviso to 13.4(3)(b), no fair adjustment for wasted expense arises on omissions flowing from reduced Provisional Quantities, Provisional Items or Provisional Sums.","Clause 13.4(9) — no allowance is included for direct loss and/or expense arising from delay, disruption or any other cause reimbursable elsewhere in the Conditions.","Clause 13.1(4) (SCC) — no loss of profit or loss and expense is included in respect of omitted work."],"summary":{"additions":16463999.97,"omissions":-6334222.27,"nett":10129777.7,"pct_of_contract":62.6,"revised_contract_sum":26309777.7},"exclusions":["Prolongation, disruption and loss of productivity (clause 13.4(9) / clause 27).","Loss of profit or loss and expense on omitted work (clause 13.1(4), SCC).","Any fair adjustment for wasted expense on omissions arising from reduced Provisional Quantities/Items/Sums (SCC proviso to 13.4(3)(b)).","Time — this VO values cost only. Any extension of time is to be determined under clause 25.","Liquidated and ascertained damages, retention and defects liability — see the Appendix to the Conditions, which is not included in the documents supplied."],"qualifications":["Issued subject to the Appendix to the Conditions, which is not present in the contract documents supplied.","Valuation based on AI-EW-002 dated 26 April 2017 and the drawings enclosed with it. Sheets GB_1001, GB_1002 and GB_1008 are dated 06.07.2012 and their currency should be confirmed.","Star-rate items are subject to substantiation of build-up by the Contractor.","The chiller plant figure of HK$13,451,946.00 is derived from a marked-up E\u0026M Schedule of Rates and is to be substantiated item by item.","All quantities are as measured from the documents supplied and are subject to remeasurement on site where applicable."],"signoff":[{"role":"Prepared by","party":"Quantity Surveyor — Currie \u0026 Brown (China) Limited","blank":true},{"role":"Checked by","party":"Quantity Surveyor","blank":true},{"role":"Recommended by","party":"Architect — Aedas Limited","blank":true},{"role":"Approved by","party":"Employer — Apollo Luck Limited","blank":true}]},"advice":{"verdict":"The valuation is arithmetically sound and the rate basis is contractually correct. The exposure is not in the numbers — it is in the procedural record and in four scope items that are under-evidenced.","headline_findings":[{"t":"Arithmetic reconciles exactly","d":"All 118 line items satisfy qty × rate = amount. Additions total HK$16,463,999.97 and omissions HK$6,334,222.27, giving the stated nett HK$10,129,777.70 — no discrepancy to any cent. The carry-forward chain across pages is internally consistent.","s":"good"},{"t":"The 62.6% variation is not a contractual breach","d":"A nett variation of HK$10.13m against a HK$16.18m contract would normally be vulnerable under the standard 'no fundamental change of scope' limit. SCC Clause 13 deletes clauses 13.1(1)(a), (b) and (c) — that limit does not apply here. Do not run that argument; it will fail.","s":"good"},{"t":"The 240-day gap is not a time-bar failure","d":"Clause 28.1(2) disapplies the 28-day notice for clause 13.1 instructions. But clause 28.2 (particulars within 60 days) and clause 28.3 (condition precedent — claim deemed waived) may still bite. Verify the Contractor's submission record.","s":"warn"},{"t":"Only 13.400000000000006% of the addition value is benchmarked to a contract rate","d":"Tendered rates carry the (-)6.92% discount (marked ^) as required by clause 13.4(5) — 29 items worth HK$2,209,219.97. Star rates (marked *) — 11 items worth HK$14,254,780.00, or 86.6% of the additions — have no Schedule equivalent and rest on the clause 13.4(1)(iii) 'fair rates' test. The valuation is therefore overwhelmingly a negotiated number, not a measured one. This, not the arithmetic, is where the money is.","s":"warn"},{"t":"The Appendix to the Conditions is missing from the set","d":"Neither booklet contains the Appendix. The General Conditions run to clause 41 and its schedules, followed immediately by the clause index (i-xiii). Commencement Date, Completion Date, liquidated damages rate, retention percentage, Limit of Retention and Defects Liability Period are therefore all unevidenced. Obtain the signed original before certifying anything time- or damages-related.","s":"bad"},{"t":"The Summary of Tender does not reconcile on its face","d":"The Summary of Tender in Booklet 2 is an unpriced blank form. Handwritten figures appear against Schedules 3-6 only (2,764,480 / 9,383,740 / 981,800 / 800,000) totalling HK$13,930,020 — HK$2,249,980 short of the HK$16,180,000 in Article 2, with no figure at all against Schedule 1 (Preliminaries). Also, the heading still reads 'AT PO LOI STREET, HUNG HOM' — a leftover from another project.","s":"bad"},{"t":"The AI encloses drawings up to five years old","d":"Sheets GB_1001, GB_1002 and GB_1008 enclosed with AI-EW-002 are dated 06.07.2012; the instruction is dated 26 April 2017. Confirm these remain the current revisions, or the Contractor has a ready-made 'instruction based on superseded information' argument.","s":"warn"}],"recommendations":[{"n":1,"h":"Obtain and append the Appendix to the Conditions","w":"Before the VO is issued. Nothing time- or damages-related can be certified without it.","d":"Request the executed Appendix from the Employer/Architect. Until it is produced, the VO should be issued expressly 'subject to the Appendix to the Conditions'."},{"n":2,"h":"Audit the Contractor's clause 28.2 submission","w":"Before the VO is agreed","d":"Confirm whether a detailed claim with build-up and records was submitted, and when. If it was not, clause 28.3 gives the Employer a waiver argument — but note the Employer has already assessed the claim, which weakens it. Record the position rather than rely on it."},{"n":3,"h":"Put the star rates to proof","w":"Before the VO is agreed","d":"Star-rate items carry no SOR benchmark. For each, require a build-up (labour, plant, material, overhead and profit) and test it against clause 13.4(1)(iii) 'fair rates'. These are the softest numbers in the assessment and the most likely to be negotiated down."},{"n":4,"h":"Decompose the HK$13.45m chiller plant line","w":"Before the VO is agreed","d":"One line item accounts for 82% of the additions. It is supported only by a marked-up E\u0026M Schedule of Rates whose own preamble states 'the quantities inserted are for reference only, only the rates will be used for the purpose of valuation'. Require the marked-up SOR, the P\u0026O breakdown, and confirmation that the figure is net of the tender discount where applicable."},{"n":5,"h":"Split the VO into measured value and time-related cost","w":"At issue","d":"Clause 13.4(9) bars delay and disruption cost from a valuation. Issue the measured VO separately from any clause 27 loss and expense claim so the two cannot be conflated or double-counted."},{"n":6,"h":"Confirm the omission basis for the eight provisional-quantity items","w":"Before the VO is agreed","d":"The SCC proviso to clause 13.4(3)(b) bars a fair adjustment for wasted expense where the omission arises from reduced Provisional Quantities/Items/Sums. Make that the stated basis in the VO so it is not reopened later."},{"n":7,"h":"Check the two items most exposed to clause 13.7","w":"Before the VO is agreed","d":"MF slab demolition and the temporary staircase replacing ST-1/ST-2 may have been caused by existing-condition or construction issues. If any part arises from the Contractor's default, clause 13.7 requires the effect to be taken into account in the valuation."},{"n":8,"h":"Record the drawing-revision position in the VO","w":"At issue","d":"List the exact drawing numbers and revisions the valuation is based on, given the 2012-dated sheets enclosed. This protects the Employer if the Contractor later claims to have built to a different revision."}],"risks":[{"r":"Appendix to the Conditions missing — LDs, retention, DLP and dates unevidenced","l":"High","m":"Cannot certify time or damages; VO may need reissue once produced."},{"r":"82% of the addition value sits in one line (chiller plant HK$13.45m)","l":"High","m":"Concentration risk; a single error in that markup moves the VO by millions."},{"r":"Star rates unbenchmarked against any SOR","l":"Medium","m":"Negotiation exposure on the star-rate element."},{"r":"Summary of Tender does not reconcile to the Contract Sum","l":"Medium","m":"Undermines any percentage-based analysis and any pro-rata argument."},{"r":"Drawings enclosed with the AI dated 2012","l":"Medium","m":"Contractor may argue the instruction was based on superseded information."},{"r":"Clause 28.2/28.3 compliance unverified","l":"Medium","m":"Either a defence (if not complied) or a live liability (if it was)."},{"r":"No prolongation or disruption claim yet quantified","l":"Medium","m":"A second, separate claim is likely; clause 13.4(9) must be enforced."}],"next_steps":["Issue a request for the executed Appendix to the Conditions (dates, LDs, retention, DLP).","Obtain the Contractor's clause 28.2 claim submission and log the date received.","Request build-ups for every star-rate item and for the chiller plant markup.","Reconcile the Summary of Tender to HK$16,180,000 with the QS who prepared it.","Confirm current revisions for GB_1001, GB_1002 and GB_1008.","Issue the measured VO with an express exclusion of clause 13.4(9) items."]}}}</script>
+<script>
+/* ============================== helpers ============================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => (n === null || n === undefined) ? '—'
+  : (n < 0 ? '(' : '') + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + (n < 0 ? ')' : '');
+const fmt0 = n => (n === null || n === undefined) ? '—' : n.toLocaleString('en-US');
+const money = (n,cur) => (cur||'HK$') + ' ' + fmt0(n);
+/* a zero contract sum means "not stated in the documents", not "HK$0.00" */
+const cs = n => n ? fmt0(n) : '—';
+const nitems = n => `${n} item${n === 1 ? '' : 's'}`;
+const when = s => s ? String(s).replace('T',' ').slice(0,16) : '—';
+
+const DEMO = JSON.parse($('#demo').textContent);
+const MODE = {live:false};
+
+/* ============================== config ============================== */
+const CFG_KEY = 'qsintel.cfg.v1';
+let MEMCFG = null;                 // used when localStorage is unavailable
+let TOAST_T = null;
+
+/* alert() and localStorage both fail inside a sandboxed preview frame, so the
+   app never relies on either for something the user needs to see. */
+function toast(msg, kind){
+  const el = $('#toast');
+  if (!el) { try { console.log('[qs] ' + msg); } catch(e){} return; }
+  el.textContent = msg;
+  el.className = 'toast in ' + (kind || '');
+  clearTimeout(TOAST_T);
+  TOAST_T = setTimeout(() => { el.className = 'toast ' + (kind || ''); }, 6000);
+}
+
+function loadCfg(){
+  try {
+    const raw = localStorage.getItem(CFG_KEY);
+    if (raw) return JSON.parse(raw) || {};
+  } catch(e){ /* storage blocked */ }
+  return MEMCFG || {};
+}
+
+function saveCfg(c){
+  MEMCFG = c;
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); return true; }
+  catch(e){ return false; }        // kept in memory for this tab
+}
+
+/* ============================== api ============================== */
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  const ct = r.headers.get('content-type') || '';
+  const body = ct.includes('json') ? await r.json() : await r.text();
+  if (!r.ok) throw new Error((body && body.error) || ('HTTP ' + r.status));
+  return body;
+}
+
+/* Anything that talks to the API is gated: in Preview mode the user gets a
+   plain explanation instead of a dead click. */
+function requireLive(what){
+  if (MODE.live) return true;
+  toast('Preview mode — ' + what + ' needs the local server. Start it with '
+      + '"python3 server/app.py", then reload this page.', 'warn');
+  return false;
+}
+
+const HEALTH = { deps: null };
+
+function depsWarning(){
+  const d = HEALTH.deps;
+  if (!d) return '';
+  const missing = [];
+  if (!d.pdf) missing.push('PDF reading (pypdfium2)');
+  if (!d.ocr) missing.push('OCR for scanned pages');
+  if (!missing.length) return '';
+  return `<div class="note"><b>The server cannot read your files.</b>
+    Missing: ${esc(missing.join(' and '))}. It was started with a Python that lacks these
+    libraries. Stop it and run <code>start-server.command</code> instead, then reload.</div>`;
+}
+
+async function retryConnection(){
+  try {
+    const h = await api('/api/health');
+    HEALTH.deps = h.deps || null;
+    MODE.live = true;
+    $('#mode').textContent = 'Live';
+    $('#mode').className = 'mode live';
+    toast('Connected to the server', 'good');
+    route();
+  } catch(e){
+    toast('Still cannot reach the server. Check that "python3 server/app.py" is running '
+        + 'and that you opened http://127.0.0.1:8000/ rather than the file.', 'bad');
+  }
+}
+
+/* ============================== state ============================== */
+const S = { projects: [], meta: null, ds: null, tab: 'files', poll: null, job: null };
+
+/* ============================== router ============================== */
+function go(hash){ if (location.hash === hash) route(); else location.hash = hash; }
+window.addEventListener('hashchange', route);
+
+async function route(){
+  const h = location.hash || '#/';
+  if (S.poll) { clearInterval(S.poll); S.poll = null; }
+  if (h === '#/settings') { openSettings(); go(S.meta ? '#/p/' + S.meta.id : '#/'); return; }
+  const m = h.match(/^#\/p\/([^/]+)(?:\/([a-z]+))?/);
+  if (m) { S.tab = m[2] || 'files'; return openProject(m[1]); }
+  return renderHome();
+}
+
+/* ============================== home ============================== */
+async function renderHome(){
+  S.meta = null; S.ds = null;
+  $('#crumb').innerHTML = '';
+  $('#main').innerHTML = `<div class="empty">Loading projects…</div>`;
+  if (MODE.live) {
+    try { S.projects = await api('/api/projects'); }
+    catch(e){ S.projects = []; }
+  } else {
+    S.projects = [{ id:'demo-ai-ew-002', name: DEMO.project.name, contract: DEMO.project.contract,
+      ref: DEMO.project.doc_ref, status:'analyzed', files: DEMO.documents.length,
+      pages: DEMO.stats.total_pages, hasAnalysis:true, demo:true, updatedAt:'' }];
+  }
+
+  const cards = S.projects.map(p => `
+    <div class="pcard" onclick="go('#/p/${esc(p.id)}')">
+      <div class="acts" onclick="event.stopPropagation()">
+        ${p.demo ? '' : `<button class="btn sm ghost" title="Duplicate" onclick="dupProject('${esc(p.id)}')">Copy</button>`}
+        ${p.demo ? '' : `<button class="btn sm ghost danger" title="Delete" onclick="delProject('${esc(p.id)}')">Delete</button>`}
+      </div>
+      <h3>${esc(p.name)}</h3>
+      <div class="meta">${esc(p.contract || '—')}${p.ref ? ' · ' + esc(p.ref) : ''}</div>
+      <div class="row">
+        <span><b>${p.files || 0}</b> files</span>
+        <span><b>${fmt0(p.pages || 0)}</b> pages</span>
+        <span>${statusPill(p)}</span>
+      </div>
+    </div>`).join('');
+
+  $('#main').innerHTML = `
+    <div class="pagehead">
+      <div>
+        <h1>Projects</h1>
+        <p>Upload a document set, connect a model, and get a variation-order review back.</p>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="openNewProject()">New project</button>
+    </div>
+    ${MODE.live ? depsWarning() : ''}
+    ${MODE.live ? '' : `<div class="note"><b>Preview mode — the server is not running.</b>
+      This page was opened as a file, so it can only show the bundled AI-EW-002 demo.
+      Creating projects, uploading files and saving settings all need the local server:
+      <div style="margin:8px 0 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+        background:rgba(0,0,0,.05);padding:7px 10px;border-radius:5px">python3 server/app.py</div>
+      then open <b>http://127.0.0.1:8000/</b> instead of the file. The badge at the top right
+      turns green when it is connected.
+      <div style="margin-top:8px"><button class="btn sm" onclick="retryConnection()">Retry connection</button></div>
+    </div>`}
+    <div class="grid">
+      ${cards}
+      <div class="pcard new" onclick="openNewProject()">
+        <div style="font-size:26px;line-height:1;margin-bottom:8px">+</div>
+        <div style="font-size:13px;font-weight:500">New project</div>
+      </div>
+    </div>`;
+}
+
+function statusPill(p){
+  if (p.status === 'analyzed') return '<span class="pill grn">Analysed</span>';
+  if (p.status === 'extracted') return '<span class="pill star">Extracted</span>';
+  if (p.status === 'uploaded') return '<span class="pill grey">Uploaded</span>';
+  return '<span class="pill grey">Empty</span>';
+}
+
+async function delProject(id){
+  if (!requireLive('deleting a project')) return;
+  if (!await askConfirm('Delete this project?',
+      'The project, its uploaded files and its analysis will be deleted. This cannot be undone.',
+      'Delete project')) return;
+  try { await api('/api/projects/' + id, {method:'DELETE'}); renderHome(); }
+  catch(e){ toast('Could not delete: ' + e.message, 'bad'); }
+}
+async function dupProject(id){
+  if (!requireLive('copying a project')) return;
+  try { const n = await api('/api/projects/' + id + '/duplicate', {method:'POST'});
+        go('#/p/' + n.id); }
+  catch(e){ toast('Could not copy: ' + e.message, 'bad'); }
+}
+
+/* ============================== project ============================== */
+async function openProject(id){
+  $('#main').innerHTML = `<div class="empty">Opening…</div>`;
+  try {
+    if (MODE.live) {
+      S.meta = await api('/api/projects/' + id);
+    } else {
+      S.meta = { id:'demo-ai-ew-002', name: DEMO.project.name, contract: DEMO.project.contract,
+                 ref: DEMO.project.doc_ref, files: DEMO.documents.map((d,i)=>({
+                   id:'d'+i, name:d.file, pages:d.pages, textLayer:d.text_layer, size:null, demo:true })),
+                 status:'analyzed', demo:true };
+    }
+  } catch(e){
+    $('#main').innerHTML = `<div class="empty"><b>Project not found</b>${esc(e.message)}</div>`;
+    return;
+  }
+
+  try { S.ds = MODE.live ? await api(`/api/projects/${id}/dataset`) : DEMO; }
+  catch(e){ S.ds = null; }
+
+  $('#crumb').innerHTML = `<span>›</span><b>${esc(S.meta.name)}</b>`;
+  renderProject();
+  if (MODE.live) startPolling();
+}
+
+function renderProject(){
+  const m = S.meta, ds = S.ds;
+  const files = m.files || [];
+  const tabs = [
+    ['files','Files', files.length],
+    ['overview','Overview', null],
+    ['documents','Documents', ds ? ds.documents.length : null],
+    ['drawings','Drawings', ds ? ds.drawings.length : null],
+    ['timeline','Key dates', ds ? ds.dates.length : null],
+    ['clauses','Key clauses', ds ? ds.clauses.length : null],
+    ['schedule','VO schedule', ds ? ds.vo.items.length : null],
+    ['draft','Draft VO', null],
+    ['advice','Advice', ds && ds.vo.advice.recommendations ? ds.vo.advice.recommendations.length : null],
+  ];
+  if (!S.tab) S.tab = 'files';
+
+  $('#main').innerHTML = `
+    <div class="phead">
+      <h1>${esc(m.name)}</h1>
+      <div class="sub">${[m.contract, m.ref, ds && ds.project.form].filter(Boolean).map(esc).join(' · ') || 'No particulars yet'}</div>
+      <div class="bar">
+        ${m.demo ? '' : `<button class="btn primary" onclick="openAnalyze()" ${files.length ? '' : 'disabled'}>
+          ${ds ? 'Re-run analysis' : 'Analyse documents'}</button>`}
+        <button class="btn" onclick="S.tab='files';renderProject()">Manage files</button>
+        ${ds && ds.vo.items.length ? `<button class="btn" onclick="exportCsv()">Export schedule (CSV)</button>` : ''}
+        <div class="spacer"></div>
+        <span class="pill ${ds ? 'grn' : 'grey'}">${ds ? 'Analysis ready' : 'Not analysed'}</span>
+      </div>
+    </div>
+    <div class="tabs">
+      ${tabs.map(([id,label,n]) => `<button class="${S.tab===id?'on':''}" onclick="S.tab='${id}';renderProject()">
+        ${label}${n ? `<span class="n">${n}</span>` : ''}</button>`).join('')}
+    </div>
+    <div id="tabbody"></div>`;
+
+  const body = $('#tabbody');
+  if (S.tab === 'files') body.innerHTML = viewFiles();
+  else if (!ds) body.innerHTML = `<div class="card empty"><b>Nothing analysed yet</b>
+      Upload documents in the Files tab, then run the analysis.</div>`;
+  else body.innerHTML = REPORT[S.tab] ? REPORT[S.tab](ds) : '';
+
+  if (S.tab === 'drawings' && ds) wireDrawings(ds);
+  if (S.tab === 'schedule' && ds) wireSchedule(ds);
+  // a re-render replaces #prog, so a failure message has to be put back
+  if (S.job && S.job.state === 'error') showProgress(S.job);
+}
+
+/* ============================== files tab ============================== */
+function viewFiles(){
+  const m = S.meta, files = m.files || [];
+  const rows = files.map(f => `<tr>
+    <td class="mono" style="max-width:280px;word-break:break-all">${esc(f.name)}</td>
+    <td class="r num">${f.pages != null ? f.pages : '—'}</td>
+    <td>${tlPill(f.textLayer)}</td>
+    <td class="r num">${f.size ? (f.size/1048576).toFixed(2)+' MB' : '—'}</td>
+    <td class="r">${m.demo ? '<span class="pill grey">demo</span>' :
+      `<button class="btn sm ghost danger" onclick="rmFile('${esc(f.id)}')">Remove</button>`}</td>
+  </tr>`).join('');
+
+  return `
+  <section>
+    ${m.demo ? `<div class="note info"><b>Demo project — read-only.</b> These are the AI-EW-002
+      documents, pre-analysed.${MODE.live ? ' Create a new project to upload your own set.'
+      : ' The server is not connected, so nothing can be uploaded or created here.'}</div>` : `
+    <div class="drop" id="drop" onclick="pickFiles(event)">
+      <div class="big">Drop documents here, or click to choose</div>
+      <div class="small">Contract, architect's instructions, drawings, specifications, assessments</div>
+      <div class="types">PDF · DOCX · TXT · CSV · images — scanned PDFs are OCR'd automatically</div>
+    </div>
+    <input type="file" id="picker" multiple hidden onchange="uploadFiles(this.files)">`}
+  </section>
+  ${extractState(m)}
+  <section>
+    <h2>Documents in this project</h2>
+    <div class="h2sub">${files.length} file(s) · ${fmt0(files.reduce((a,f)=>a+(f.pages||0),0))} pages</div>
+    <div class="card tblwrap">
+      <table><thead><tr><th>File</th><th class="r">Pages</th><th>Extraction</th><th class="r">Size</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" class="empty">No files yet</td></tr>`}</tbody></table>
+    </div>
+  </section>
+  <section>
+    <h2>Analysis</h2>
+    <div class="h2sub">Reads the most commercially relevant pages, extracts the key data, and builds the review.</div>
+    <div class="card" style="padding:16px 18px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        ${m.demo ? `<span style="font-size:12px;color:var(--muted)">Read-only demo — create a
+          project to analyse your own documents.</span>`
+        : `<button class="btn primary" onclick="openAnalyze()" ${files.length?'':'disabled'}>Analyse documents</button>`}
+        <span style="font-size:12px;color:var(--muted)" id="cfgsum">${cfgSummary()}</span>
+      </div>
+      <div id="prog"></div>
+    </div>
+  </section>`;
+}
+
+function extractState(m){
+  if (m.demo) return '';
+  const files = m.files || [];
+  const job = m.job || {};
+  if (!files.length) return '';
+  if (job.state === 'running')
+    return `<div class="note info"><b>Reading the documents…</b> ${esc(job.message || 'working')}
+      ${job.step === 'extract' ? 'Large scanned files are OCR\'d page by page — a 400-page booklet '
+      + 'takes several minutes. You can leave this page open.' : ''}</div>`;
+  if (job.state === 'error')
+    return `<div class="note"><b>Reading failed.</b> ${esc(job.error || job.message || '')}
+      <div style="margin-top:8px"><button class="btn sm" onclick="startExtract()">Try again</button></div></div>`;
+  const unread = files.filter(f => f.textLayer == null);
+  if (unread.length)
+    return `<div class="note"><b>${unread.length} file(s) have not been read yet.</b>
+      Extraction stopped before finishing — usually because the server was restarted.
+      <div style="margin-top:8px"><button class="btn sm" onclick="startExtract()">Read them now</button></div></div>`;
+  return '';
+}
+
+function tlPill(t){
+  if (t === 'yes') return '<span class="pill grn">Text layer</span>';
+  if (t === 'partial') return '<span class="pill star">Partial + OCR</span>';
+  if (t === 'no') return '<span class="pill red">OCR only</span>';
+  return '<span class="pill grey">Not read yet</span>';
+}
+function cfgSummary(){
+  const c = loadCfg();
+  if (!c.apiKey) return 'No API key configured — add one in Settings.';
+  return `${esc(c.provider || 'openai')} · ${esc(c.model || 'no model')}`;
+}
+
+function pickFiles(ev){
+  if (ev && ev.target && ev.target.id === 'picker') return;   // do not re-enter
+  const inp = $('#picker');
+  if (!inp) return;
+  inp.value = '';                 // so re-picking the same file still fires change
+  inp.click();
+}
+
+async function uploadFiles(list){
+  if (!requireLive('uploading files')) return;
+  if (!list || !list.length) return;
+  const fd = new FormData();
+  [...list].forEach(f => fd.append('files', f, f.name));
+  const prog = $('#prog');
+  if (prog) prog.innerHTML = `<div class="prog"><div class="msg">Uploading ${list.length} file(s)…</div>
+    <div class="bar2"><i></i></div></div>`;
+  try {
+    await api(`/api/projects/${S.meta.id}/files`, {method:'POST', body:fd});
+    S.meta = await api('/api/projects/' + S.meta.id);
+    renderProject();
+    startExtract();
+  } catch(e){
+    const msg = 'Upload failed: ' + (e && e.message ? e.message : 'unknown error');
+    if (prog) prog.innerHTML = `<div class="prog err">${esc(msg)}</div>`;
+    toast(msg, 'bad');
+  }
+}
+
+async function rmFile(fid){
+  if (!requireLive('removing a file')) return;
+  if (!await askConfirm('Remove this file?',
+      'The uploaded file and its extracted text will be deleted from this project.',
+      'Remove file')) return;
+  try { await api(`/api/projects/${S.meta.id}/files/${fid}`, {method:'DELETE'});
+        S.meta = await api('/api/projects/' + S.meta.id); renderProject();
+        toast('File removed', 'good'); }
+  catch(e){ toast('Could not remove the file: ' + e.message, 'bad'); }
+}
+
+/* --------- extraction + analysis jobs --------- */
+function startExtract(){
+  S.job = null;
+  api(`/api/projects/${S.meta.id}/extract`, {method:'POST'}).catch(()=>{});
+  startPolling();
+}
+function startPolling(){
+  if (!MODE.live || !S.meta) return;
+  if (S.poll) clearInterval(S.poll);
+  S.poll = setInterval(async () => {
+    try {
+      const st = await api(`/api/projects/${S.meta.id}/status`);
+      showProgress(st);
+      if (st.state === 'done' || st.state === 'error'){
+        clearInterval(S.poll); S.poll = null;
+        S.job = st;
+        S.meta = await api('/api/projects/' + S.meta.id);
+        if (st.state === 'done'){
+          try { S.ds = await api(`/api/projects/${S.meta.id}/dataset`); } catch(e){}
+          if (S.tab === 'files') S.tab = 'overview';
+        }
+        setTimeout(renderProject, 600);
+      }
+    } catch(e){ clearInterval(S.poll); S.poll = null; }
+  }, 1200);
+}
+function showProgress(st){
+  const el = $('#prog');
+  if (!el || !st || !st.state) return;
+  if (st.state === 'running')
+    el.innerHTML = `<div class="prog"><div class="msg">${esc(st.message || 'Working…')}</div>
+      <div class="bar2"><i></i></div></div>`;
+  else if (st.state === 'error')
+    el.innerHTML = `<div class="prog err"><b>${esc(st.message || 'Failed')}</b><br>${esc(st.error || '')}</div>`;
+  else if (st.state === 'done')
+    el.innerHTML = `<div class="prog done">${esc(st.message || 'Done')}</div>`;
+}
+
+/* ============================== modals ============================== */
+function closeModal(){ $('#modal').innerHTML = ''; }
+
+/* window.confirm() is suppressed inside a sandboxed preview frame, so a
+   "Remove" button would do nothing at all. Use a dialog we draw ourselves. */
+function askConfirm(title, body, okLabel){
+  return new Promise(resolve => {
+    window.__cfm = v => { window.__cfm = null; closeModal(); resolve(v); };
+    $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this&&window.__cfm)window.__cfm(false)">
+      <div class="modal">
+        <h3>${esc(title)}</h3>
+        <div class="msub">${esc(body)}</div>
+        <div class="foot2">
+          <button class="btn" onclick="window.__cfm&&window.__cfm(false)">Cancel</button>
+          <button class="btn primary" onclick="window.__cfm&&window.__cfm(true)">${esc(okLabel || 'Confirm')}</button>
+        </div>
+      </div></div>`;
+  });
+}
+
+function openNewProject(){
+  $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>New project</h3>
+      <div class="msub">Name it, then upload the document set.</div>
+      <div class="field"><label>Project name</label>
+        <input id="np-name" placeholder="e.g. Zung Fu Retail Network — Enabling Works"></div>
+      <div class="row2">
+        <div class="field"><label>Contract</label><input id="np-contract" placeholder="Enabling Works"></div>
+        <div class="field"><label>Contract reference</label><input id="np-ref" placeholder="W/…"></div>
+      </div>
+      <div class="field"><label>Client</label><input id="np-client" placeholder="Employer"></div>
+      <div class="foot2">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="createProject()">Create</button>
+      </div>
+    </div></div>`;
+  setTimeout(()=>$('#np-name').focus(), 30);
+}
+
+async function createProject(){
+  if (!requireLive('creating a project')) return;
+  const name = $('#np-name').value.trim();
+  if (!name) return toast('Give the project a name.', 'bad');
+  const body = { name, contract: $('#np-contract').value.trim(),
+                 ref: $('#np-ref').value.trim(), client: $('#np-client').value.trim() };
+  try {
+    const p = await api('/api/projects', {method:'POST',
+      headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+    closeModal(); go('#/p/' + p.id);
+    toast('Project created', 'good');
+  } catch(e){ toast('Could not create the project: ' + e.message, 'bad'); }
+}
+
+function openSettings(){
+  const c = loadCfg();
+  const prov = c.provider || 'openai';
+  $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>Model settings</h3>
+      <div class="msub">Your key is stored in this browser only and sent with each analysis request.
+        The server does not save it.</div>
+      <div class="field"><label>Provider</label>
+        <select id="cfg-provider" onchange="onProviderChange()">
+          <option value="openai">OpenAI / compatible</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="google">Google Gemini</option>
+        </select>
+        <div class="hint" id="cfg-hint"></div>
+      </div>
+      <div class="field"><label>Model</label>
+        <input id="cfg-model" list="models" placeholder="gpt-4o-mini">
+        <datalist id="models"></datalist></div>
+      <div class="field"><label>Base URL <span style="font-weight:400;color:var(--faint)">(optional)</span></label>
+        <input id="cfg-base" placeholder="https://api.openai.com/v1">
+        <div class="hint">Point this at DeepSeek, Qwen, Groq, vLLM, Ollama or any compatible endpoint.</div></div>
+      <div class="field"><label>API key</label>
+        <input id="cfg-key" type="password" placeholder="sk-…"></div>
+      <div class="field"><label>Pages sent to the model</label>
+        <input id="cfg-chunks" type="number" min="4" max="40" value="${c.maxChunks || 12}">
+        <div class="hint">Each unit is roughly 13,000 characters. Higher costs more and takes longer.</div></div>
+      <div class="foot2">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="saveSettings()">Save</button>
+      </div>
+    </div></div>`;
+  $('#cfg-provider').value = prov;
+  $('#cfg-model').value = c.model || '';
+  $('#cfg-base').value = c.baseUrl || '';
+  $('#cfg-key').value = c.apiKey || '';
+  onProviderChange();
+}
+
+async function onProviderChange(){
+  const p = $('#cfg-provider').value;
+  const dl = $('#models');
+  let presets = {};
+  try { presets = MODE.live ? await api('/api/providers') : {}; } catch(e){}
+  const list = (presets[p] && presets[p].models) || [];
+  dl.innerHTML = list.map(m => `<option value="${esc(m)}">`).join('');
+  const hint = $('#cfg-hint');
+  hint.textContent = (presets[p] && presets[p].hint) ||
+    (p === 'openai' ? 'Any OpenAI-compatible endpoint.' : '');
+  if (!$('#cfg-model').value && list.length) $('#cfg-model').value = list[0];
+  if (!$('#cfg-base').value && presets[p]) $('#cfg-base').placeholder = presets[p].defaultBase;
+}
+
+function saveSettings(){
+  const cfg = {
+    provider: $('#cfg-provider').value,
+    model: $('#cfg-model').value.trim(),
+    baseUrl: $('#cfg-base').value.trim(),
+    apiKey: $('#cfg-key').value,
+    maxChunks: parseInt($('#cfg-chunks').value) || 12,
+  };
+  if (!cfg.apiKey){ return toast('Enter an API key before saving.', 'bad'); }
+  if (!cfg.model){ return toast('Choose a model before saving.', 'bad'); }
+
+  const persisted = saveCfg(cfg);
+  closeModal();
+  if (S.meta) renderProject(); else renderHome();
+  if (persisted) toast('Settings saved — ' + cfg.provider + ' · ' + cfg.model, 'good');
+  else toast('Settings saved for this tab only — the browser blocked local storage, so they '
+           + 'will not survive a reload.', 'warn');
+}
+
+function openAnalyze(){
+  if (!S.meta) return;
+  if (S.meta.demo) return toast('The demo project is read-only. Create a new project and upload '
+      + 'your own documents to analyse them.', 'warn');
+  const c = loadCfg();
+  if (!c.apiKey){
+    return $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal"><h3>Add a model first</h3>
+      <div class="msub">The analysis needs an API key. It is kept in this browser and sent only with
+        the request.</div>
+      <div class="foot2"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="closeModal();openSettings()">Open settings</button></div></div></div>`;
+  }
+  $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>Run analysis</h3>
+      <div class="msub">${esc(c.provider)} · ${esc(c.model)} · ${(S.meta.files||[]).length} files
+        · up to ${c.maxChunks || 12} page blocks sent</div>
+      <div class="note info">The model reads the most commercially relevant pages, extracts facts, then
+        assembles the review. Nothing is invented — missing evidence is reported as missing.</div>
+      <div class="foot2">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="runAnalysis()">Start</button>
+      </div>
+    </div></div>`;
+}
+
+async function runAnalysis(){
+  closeModal();
+  if (!requireLive('running the analysis')) return;
+  S.job = null;
+  const c = loadCfg();
+  if (S.tab !== 'files'){ S.tab = 'files'; renderProject(); }
+  const prog = $('#prog');
+  if (prog) prog.innerHTML = `<div class="prog"><div class="msg">Starting…</div><div class="bar2"><i></i></div></div>`;
+  try {
+    await api(`/api/projects/${S.meta.id}/analyze`, {method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({ provider:c.provider, model:c.model, apiKey:c.apiKey,
+                             baseUrl:c.baseUrl, maxChunks:c.maxChunks })});
+    startPolling();
+  } catch(e){
+    if (prog) prog.innerHTML = `<div class="prog err">${esc(e.message)}</div>`;
+  }
+}
+
+function exportCsv(){
+  const ds = S.ds; if (!ds) return;
+  const head = ['Part','Item','Section','Description','Qty','Unit','Rate','Basis','Amount','Page'];
+  const lines = [head.join(',')];
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  ds.vo.items.forEach(i => lines.push([i.part,i.no,q(i.section||''),q(i.description),
+    i.qty ?? '', i.unit ?? '', i.rate ?? '', i.rate_basis ?? '', i.amount ?? '', i.page ?? ''].join(',')));
+  lines.push('');
+  lines.push(['','','',q('TOTAL ADDITIONS'),'','','','',ds.stats.additions].join(','));
+  lines.push(['','','',q('TOTAL OMISSIONS'),'','','','',ds.stats.omissions].join(','));
+  lines.push(['','','',q('NETT'),'','','','',ds.stats.nett].join(','));
+  const blob = new Blob(['\ufeff' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (S.meta.name || 'vo').replace(/[^\w\-]+/g,'-') + '-schedule.csv';
+  a.click();
+}
+
+/* ============================== report views ============================== */
+const REPORT = {};
+
+REPORT.overview = D => {
+  const S2 = D.stats, P = D.project;
+  const max = Math.max(S2.additions, Math.abs(S2.omissions), S2.nett, S2.contract_sum || 0) || 1;
+  const bar = (c,v) => `<div class="bar ${c}" style="width:${Math.max(1.5, v/max*100)}%"></div>`;
+  const findings = (D.vo.advice.headline_findings || []).map(x => `
+    <div class="find"><span class="tag ${x.s||'warn'}">${x.s==='good'?'Pass':x.s==='bad'?'Issue':'Watch'}</span>
+      <div><div class="ft">${esc(x.t)}</div><div class="fd">${esc(x.d)}</div></div></div>`).join('');
+  const risks = (D.vo.advice.risks || []).map(r => {
+    const c = r.l === 'High' ? 'red' : r.l === 'Medium' ? 'star' : 'grey';
+    return `<tr><td>${esc(r.r)}</td><td><span class="pill ${c}">${esc(r.l)}</span></td><td>${esc(r.m)}</td></tr>`;
+  }).join('');
+
+  return `
+  <div class="kpis">
+    <div class="kpi"><div class="k">Contract Sum</div><div class="v num">${cs(S2.contract_sum)}</div>
+      <div class="d">${S2.contract_sum ? esc(P.currency||'HK$') : 'not stated in the documents'}</div></div>
+    <div class="kpi acc"><div class="k">VO Nett</div><div class="v num">${fmt0(S2.nett)}</div>
+      <div class="d">${S2.contract_sum ? S2.pct + '% of Contract Sum' : 'no contract sum to compare'}</div></div>
+    <div class="kpi pos"><div class="k">Additions</div><div class="v num">${fmt0(S2.additions)}</div>
+      <div class="d">${nitems(S2.additions_items)}</div></div>
+    <div class="kpi neg"><div class="k">Omissions</div><div class="v num">${fmt0(S2.omissions)}</div>
+      <div class="d">${nitems(S2.omissions_items)}</div></div>
+  </div>
+  <section><div class="card wf">
+    <div class="wfrow"><div class="lbl">Contract Sum</div><div class="track">${bar('cs',S2.contract_sum||0)}</div><div class="amt num">${cs(S2.contract_sum)}</div></div>
+    <div class="wfrow"><div class="lbl">Additions</div><div class="track">${bar('add',S2.additions)}</div><div class="amt num" style="color:var(--bad)">${fmt(S2.additions)}</div></div>
+    <div class="wfrow"><div class="lbl">Omissions</div><div class="track">${bar('omi',Math.abs(S2.omissions))}</div><div class="amt num" style="color:var(--good)">${fmt(S2.omissions)}</div></div>
+    <div class="wfrow"><div class="lbl"><b>VO Nett</b></div><div class="track">${bar('net',S2.nett)}</div><div class="amt num" style="color:var(--accent)">${fmt(S2.nett)}</div></div>
+    <div class="wfrow" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px">
+      <div class="lbl">Revised Contract Sum</div><div class="track"></div>
+      <div class="amt num" style="color:var(--accent);font-size:15px">${S2.contract_sum ? fmt(S2.revised_contract_sum) : '—'}</div></div>
+  </div></section>
+  <section><h2>Headline findings</h2>
+    <div class="h2sub">${esc(D.vo.advice.verdict || '')}</div>
+    <div class="card">${findings || '<div class="empty">No findings recorded</div>'}</div></section>
+  ${risks ? `<section><h2>Risk register</h2>
+    <div class="card tblwrap"><table><thead><tr><th style="width:42%">Risk</th><th style="width:10%">Level</th><th>Consequence</th></tr></thead>
+    <tbody>${risks}</tbody></table></div></section>` : ''}
+  ${S2.line_items ? `<section><h2>Where the money is</h2>
+    <div class="h2sub">Rate basis of the ${S2.additions_items} addition items.</div>
+    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="k">Star-rate value</div><div class="v num" style="color:var(--warn)">${fmt0(S2.star_value)}</div>
+        <div class="d">${nitems(S2.star_items)} · ${S2.star_pct}% of additions</div></div>
+      <div class="kpi"><div class="k">Tendered-rate value</div><div class="v num" style="color:var(--accent)">${fmt0(S2.tendered_value)}</div>
+        <div class="d">${nitems(S2.tendered_items)}</div></div>
+      <div class="kpi"><div class="k">Line items</div><div class="v num">${S2.line_items}</div>
+        <div class="d">${S2.additions_items} add · ${S2.omissions_items} omit</div></div>
+    </div></section>` : ''}`;
+};
+
+REPORT.documents = D => {
+  const rows = D.documents.map(d => `<tr>
+    <td class="mono" style="max-width:220px;word-break:break-all">${esc(d.file)}</td>
+    <td>${esc(d.type)}<div style="color:var(--faint);font-size:11.5px;margin-top:2px">${esc(d.role)}</div></td>
+    <td class="r num">${d.pages ?? '—'}</td>
+    <td>${tlPill(d.text_layer)}</td>
+    <td class="num" style="white-space:nowrap">${esc(d.date || '—')}</td>
+    <td style="max-width:340px;color:var(--ink-2)">${esc(d.note || '')}</td></tr>`).join('');
+  return `<section><h2>Document register</h2>
+    <div class="h2sub">${D.documents.length} files · ${fmt0(D.stats.total_pages)} pages.</div>
+    <div class="card tblwrap"><table>
+    <thead><tr><th>File</th><th>Type</th><th class="r">Pages</th><th>Extraction</th><th>Date</th><th>Notes</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></section>`;
+};
+
+REPORT.drawings = D => {
+  const disc = [...new Set(D.drawings.map(d => d.discipline))];
+  const rows = D.drawings.map(d => `<tr data-d="${esc(d.discipline)}">
+    <td class="mono" style="white-space:nowrap">${esc(d.no)}</td>
+    <td>${esc(d.title || '—')}</td><td>${esc(d.discipline)}</td>
+    <td class="num" style="white-space:nowrap">${esc(d.date || '—')}</td>
+    <td class="mono">${esc(d.scale || '—')}</td>
+    <td>${d.in_ai ? '<span class="pill star">Enclosed with AI</span>' : '<span class="pill grey">Contract only</span>'}</td>
+  </tr>`).join('');
+  return `<section><h2>Drawing register</h2>
+    <div class="h2sub">${D.drawings.length} sheets detected from the document text.</div>
+    ${D.drawings.length ? `
+    <div class="toolbar"><input type="search" id="dq" placeholder="Filter by drawing number or title…">
+      <div class="seg" id="dseg"><button class="on" data-d="">All</button>
+      ${disc.map(x => `<button data-d="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
+    <div class="card tblwrap"><table><thead><tr><th>Drawing No.</th><th>Title</th><th>Discipline</th>
+    <th>Date</th><th>Scale</th><th>Status</th></tr></thead><tbody id="dtb">${rows}</tbody></table></div>`
+    : `<div class="card empty"><b>No drawings detected</b>
+      The register is built from title-block text. Upload the drawing PDFs (not just the contract
+      booklets) and run the analysis again — sheets without a text layer are OCR'd first.</div>`}
+    </section>`;
+};
+function wireDrawings(){
+  const q = $('#dq'), tb = $('#dtb'); if (!q || !tb) return;
+  let f = '';
+  const run = () => { const s = q.value.toLowerCase();
+    [...tb.rows].forEach(r => { r.style.display =
+      ((!f || r.dataset.d === f) && (!s || r.textContent.toLowerCase().includes(s))) ? '' : 'none'; }); };
+  q.oninput = run;
+  $('#dseg').onclick = e => { const b = e.target.closest('button'); if (!b) return;
+    [...$('#dseg').children].forEach(x => x.classList.toggle('on', x === b)); f = b.dataset.d; run(); };
+}
+
+REPORT.timeline = D => {
+  const t = D.dates.map(d => `<div class="tli ${d.flag || ''}">
+    <div class="td">${esc(d.date)}</div><div class="te">${esc(d.event)}</div>
+    <div class="tm">${esc(d.doc || '')}</div>
+    ${d.note ? `<div class="tn">${esc(d.note)}</div>` : ''}</div>`).join('');
+  return `<section><h2>Key dates</h2>
+    <div class="h2sub">${D.dates.length} events across the document set.</div>
+    <div class="card" style="padding:20px 22px"><div class="tl">${t || '<div class="empty">No dates extracted</div>'}</div></div></section>`;
+};
+
+REPORT.clauses = D => {
+  const rank = {critical:0, high:1, medium:2};
+  const list = [...D.clauses].sort((a,b) => (rank[a.importance] ?? 3) - (rank[b.importance] ?? 3));
+  const c = list.map(x => {
+    const p = x.importance === 'critical' ? 'red' : x.importance === 'high' ? 'star' : 'grey';
+    return `<div class="clause">
+      <div class="ch"><span class="cref">${esc(x.ref)}</span><span class="ctitle">${esc(x.title)}</span>
+        <span class="pill ${p}" style="margin-left:auto">${esc(x.importance || '')}</span></div>
+      ${x.quote ? `<blockquote>${esc(x.quote)}</blockquote>` : ''}
+      <div class="rel">${esc(x.relevance || '')}</div>
+      ${x.source ? `<div class="src">${esc(x.source)}</div>` : ''}</div>`;
+  }).join('');
+  return `<section><h2>Key clauses engaged</h2>
+    <div class="h2sub">${D.clauses.length} provisions, ordered by weight.</div>
+    <div class="card">${c || '<div class="empty">No clauses extracted</div>'}</div></section>`;
+};
+
+REPORT.schedule = D => {
+  const items = D.vo.items, S2 = D.stats;
+  const rows = items.map(i => `<tr data-p="${esc(i.part)}">
+    <td class="r num" style="color:var(--faint)">${i.no ?? ''}</td>
+    <td>${esc(i.description)}${i.section ? `<div style="color:var(--faint);font-size:11.5px;margin-top:2px">${esc(i.section)}</div>` : ''}</td>
+    <td class="r num">${i.qty != null ? fmt0(i.qty) : '—'}</td>
+    <td>${esc(i.unit || '')}</td>
+    <td class="r num">${i.rate != null ? fmt(i.rate) : '—'}</td>
+    <td>${i.rate_basis === 'star' ? '<span class="pill star">star *</span>'
+        : i.rate_basis === 'tendered' ? '<span class="pill tend">SOR ^</span>'
+        : '<span class="pill grey">—</span>'}</td>
+    <td class="r num" style="font-weight:500">${fmt(i.amount)}</td>
+    <td class="r num" style="color:var(--faint)">${i.page ?? ''}</td></tr>`).join('');
+
+  const adds = items.filter(i => (i.part||'').toUpperCase() === 'ADDITIONS');
+  const omis = items.filter(i => (i.part||'').toUpperCase() === 'OMISSIONS');
+
+  return `
+  <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="k">Additions</div><div class="v num" style="color:var(--bad);font-size:19px">${fmt0(S2.additions)}</div><div class="d">${nitems(adds.length)}</div></div>
+    <div class="kpi"><div class="k">Omissions</div><div class="v num" style="color:var(--good);font-size:19px">${fmt0(S2.omissions)}</div><div class="d">${nitems(omis.length)}</div></div>
+    <div class="kpi acc"><div class="k">Nett</div><div class="v num" style="font-size:19px">${fmt0(S2.nett)}</div><div class="d">${S2.pct}% of contract</div></div>
+    <div class="kpi"><div class="k">Line items</div><div class="v num" style="font-size:19px">${S2.line_items}</div><div class="d">from the assessment</div></div>
+  </div>
+  <section><h2>Priced schedule</h2>
+    <div class="h2sub">All ${items.length} items with the source page where known.</div>
+    <div class="toolbar"><input type="search" id="sq" placeholder="Search description…">
+      <div class="seg" id="sseg"><button class="on" data-p="">All</button>
+      <button data-p="ADDITIONS">Additions</button><button data-p="OMISSIONS">Omissions</button></div></div>
+    <div class="card tblwrap" style="max-height:660px;overflow-y:auto">
+      <table><thead><tr><th class="r" style="width:44px">#</th><th>Description</th><th class="r">Qty</th>
+      <th>Unit</th><th class="r">Rate</th><th>Basis</th><th class="r">Amount</th><th class="r">Pg</th></tr></thead>
+      <tbody id="stb">${rows}</tbody></table></div></section>`;
+};
+function wireSchedule(){
+  const q = $('#sq'), tb = $('#stb'); if (!q || !tb) return;
+  let f = '';
+  const run = () => { const s = q.value.toLowerCase();
+    [...tb.rows].forEach(r => { r.style.display =
+      ((!f || r.dataset.p === f) && (!s || r.textContent.toLowerCase().includes(s))) ? '' : 'none'; }); };
+  q.oninput = run;
+  $('#sseg').onclick = e => { const b = e.target.closest('button'); if (!b) return;
+    [...$('#sseg').children].forEach(x => x.classList.toggle('on', x === b)); f = b.dataset.p; run(); };
+}
+
+REPORT.draft = D => {
+  const v = D.vo.draft || {}, s = D.vo.summary || {}, P = D.project;
+  const li = a => (a || []).map(x => `<li>${esc(x)}</li>`).join('');
+  return `
+  <div class="toolbar" style="max-width:900px;margin:0 auto 12px">
+    <div class="seg"><button onclick="window.print()">Print / save as PDF</button></div>
+    <span style="font-size:12px;color:var(--muted)">Draft for review — clear the qualifications before issue.</span>
+  </div>
+  <div class="doc">
+    <h3>VARIATION ORDER ${esc(v.vo_no || '')}</h3>
+    <div class="dsub">${esc(v.title || '')}</div>
+    <dl class="meta2">
+      <dt>Project</dt><dd>${esc(P.name)}</dd>
+      <dt>Employer</dt><dd>${esc(v.employer || P.employer || '—')}</dd>
+      <dt>Contractor</dt><dd>${esc(v.contractor || P.contractor || '—')}</dd>
+      <dt>Architect</dt><dd>${esc(v.architect || P.architect || '—')}</dd>
+      <dt>Quantity Surveyor</dt><dd>${esc(v.qs || P.qs || '—')}</dd>
+      <dt>Instruction</dt><dd>${esc(v.instruction_ref || '—')}${v.instruction_date ? ' dated ' + esc(v.instruction_date) : ''}</dd>
+      <dt>Valuation date</dt><dd>${esc(v.valuation_date || '—')}</dd>
+      <dt>Contract Sum</dt><dd class="num">${cs(v.contract_sum)}</dd>
+    </dl>
+    ${(v.scope||[]).length ? `<h4>1. Scope instructed</h4><ol>${li(v.scope)}</ol>` : ''}
+    ${(v.basis||[]).length ? `<h4>2. Basis of valuation</h4><ul>${li(v.basis)}</ul>` : ''}
+    <h4>3. Valuation summary</h4>
+    <table><thead><tr><th>Item</th><th class="r">Additions</th><th class="r">Omissions</th><th class="r">Nett</th></tr></thead>
+      <tbody><tr><td>Additional scope of works</td><td class="r num">${fmt(s.additions)}</td>
+      <td class="r num">${fmt(s.omissions)}</td><td class="r num">${fmt(s.nett)}</td></tr>
+      <tr class="total"><td>Total</td><td class="r num">${fmt(s.additions)}</td>
+      <td class="r num">${fmt(s.omissions)}</td><td class="r num">${fmt(s.nett)}</td></tr></tbody></table>
+    <table><tbody>
+      <tr><td>Contract Sum</td><td class="r num">${cs(v.contract_sum)}</td></tr>
+      <tr><td>Add this Variation Order</td><td class="r num">${fmt(s.nett)}</td></tr>
+      <tr class="total"><td>Revised Contract Sum</td><td class="r num">${v.contract_sum ? fmt(s.revised_contract_sum) : '—'}</td></tr>
+      <tr><td>Variation as % of original Contract Sum</td><td class="r num">${v.contract_sum ? (s.pct_of_contract ?? 0) + '%' : '—'}</td></tr>
+    </tbody></table>
+    ${(v.exclusions||[]).length ? `<h4>4. Exclusions</h4><ul>${li(v.exclusions)}</ul>` : ''}
+    ${(v.qualifications||[]).length ? `<h4>5. Qualifications</h4><ul>${li(v.qualifications)}</ul>` : ''}
+    <h4>6. Certification</h4>
+    <div class="sign">${(v.signoff || []).map(x => `<div><div class="sig"><b>${esc(x.role)}</b>
+      ${esc(x.party)}<br>Name / Signature / Date</div></div>`).join('')}</div>
+  </div>`;
+};
+
+REPORT.advice = D => {
+  const a = D.vo.advice || {};
+  const recs = (a.recommendations || []).map((r,i) => `<div class="rec">
+    <div class="recn">${r.n ?? i+1}</div>
+    <div><h4>${esc(r.h)}</h4><p>${esc(r.d)}</p>${r.w ? `<div class="when">When: ${esc(r.w)}</div>` : ''}</div></div>`).join('');
+  const risks = (a.risks || []).map(r => {
+    const c = r.l === 'High' ? 'red' : r.l === 'Medium' ? 'star' : 'grey';
+    return `<tr><td>${esc(r.r)}</td><td><span class="pill ${c}">${esc(r.l)}</span></td><td>${esc(r.m)}</td></tr>`;
+  }).join('');
+  const steps = (a.next_steps || []).map((s,i) =>
+    `<div class="check"><span class="ic ok">${i+1}</span><div>${esc(s)}</div></div>`).join('');
+  return `
+  <section><h2>Position</h2>
+    <div class="card" style="padding:16px 18px;border-left:3px solid var(--accent)">
+      <div style="font-size:14px;line-height:1.6">${esc(a.verdict || '')}</div></div></section>
+  ${recs ? `<section><h2>Recommendations</h2>
+    <div class="h2sub">Ordered by what protects the position first.</div>
+    <div class="card">${recs}</div></section>` : ''}
+  ${risks ? `<section><h2>Risk register</h2>
+    <div class="card tblwrap"><table><thead><tr><th style="width:42%">Risk</th><th style="width:10%">Level</th>
+    <th>Consequence</th></tr></thead><tbody>${risks}</tbody></table></div></section>` : ''}
+  ${steps ? `<section><h2>Immediate actions</h2>
+    <div class="card" style="padding:12px 18px">${steps}</div></section>` : ''}
+  <div class="note" style="margin-top:22px"><b>Professional notice.</b> Generated from the uploaded
+    documents. Figures are recomputed from the extracted schedule; nothing has been remeasured from the
+    drawings. Verify against the signed originals before certifying.</div>`;
+};
+
+/* ============================== boot ============================== */
+(async function boot(){
+  try {
+    const h = await api('/api/health');
+    HEALTH.deps = h.deps || null;
+    MODE.live = true;
+    $('#mode').textContent = 'Live';
+    $('#mode').className = 'mode live';
+  } catch(e){
+    MODE.live = false;
+    $('#mode').textContent = 'Preview';
+    $('#mode').className = 'mode preview';
+  }
+  route();
+})();
+
+/* drag & drop wiring, delegated */
+document.addEventListener('dragover', e => {
+  const d = e.target.closest('#drop'); if (!d) return;
+  e.preventDefault(); d.classList.add('over');
+});
+document.addEventListener('dragleave', e => {
+  const d = e.target.closest('#drop'); if (d) d.classList.remove('over');
+});
+document.addEventListener('drop', e => {
+  const d = e.target.closest('#drop'); if (!d) return;
+  e.preventDefault(); d.classList.remove('over');
+  uploadFiles(e.dataTransfer.files);
+});
+</script>
+</body>
+</html>
