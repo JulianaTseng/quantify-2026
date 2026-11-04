@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QS Document Intelligence - Pure Frontend</title>
 <style>
-/* 保留你原本的漂亮样式 */
 :root{
   --ink:#14171a; --ink-2:#3d464e; --muted:#6b7681; --faint:#98a2ac;
   --line:#e4e7ea; --line-2:#eef1f3;
@@ -59,7 +58,6 @@ section{margin-bottom:26px}
 .note.info{background:var(--accent-soft);border-color:#cfe4e2;color:var(--accent)}
 .note b{font-weight:600}
 
-/* Markdown 渲染的基础样式 */
 .md-content { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
 .md-content h3 { font-size: 15px; margin: 16px 0 8px; color: var(--ink); }
 .md-content p { margin-bottom: 12px; }
@@ -69,7 +67,6 @@ section{margin-bottom:26px}
 .md-content th, .md-content td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
 .md-content th { background: var(--panel); font-weight: 600; }
 
-/* 模态框 */
 .overlay{position:fixed;inset:0;background:rgba(20,23,26,.34);display:flex;align-items:flex-start;
   justify-content:center;padding:70px 20px;z-index:200;overflow-y:auto}
 .modal{background:var(--card);border-radius:12px;width:100%;max-width:520px;padding:24px 26px;
@@ -103,33 +100,21 @@ section{margin-bottom:26px}
 <div id="modal"></div>
 
 <script>
-// ==========================================
-// 1. 全局配置和状态
-// ==========================================
-const S = { 
-  fileName: null, 
-  fileId: null, 
-  isAnalyzing: false 
-};
+const S = { fileName: null, fileId: null, isAnalyzing: false };
 
-// ==========================================
-// 2. 初始化界面
-// ==========================================
 function renderHome() {
   $('#main').innerHTML = `
     <div class="pagehead" style="margin-bottom:20px">
       <h1 style="font-size:22px;font-weight:600">PDF 智能解析</h1>
       <p style="color:var(--muted);font-size:13px;margin-top:3px">上传 PDF，直接交给 AI 提取信息。</p>
     </div>
-    
     <section>
       <div class="drop" id="drop" onclick="pickFiles()">
         <div class="big">点击选择，或将 PDF 拖拽到此处</div>
-        <div class="small">支持 PDF、DOCX、TXT 等格式（AI 直接解析）</div>
+        <div class="small">支持 PDF（直接通过智谱 AI 解析）</div>
       </div>
       <input type="file" id="picker" hidden onchange="handleFile(this.files[0])">
     </section>
-
     <section id="fileStatus" style="display:none">
       <h2>当前文件</h2>
       <div class="card" style="padding:16px 18px; display:flex; align-items:center; justify-content:space-between">
@@ -138,7 +123,6 @@ function renderHome() {
       </div>
       <div id="prog"></div>
     </section>
-
     <section id="resultSection" style="display:none">
       <h2>AI 分析结果</h2>
       <div class="card" style="padding:20px 24px">
@@ -146,118 +130,79 @@ function renderHome() {
       </div>
     </section>
   `;
-  
   wireDragDrop();
 }
 
-function pickFiles() {
-  $('#picker').click();
-}
+function pickFiles() { $('#picker').click(); }
 
 function handleFile(file) {
   if (!file) return;
   if (!file.name.toLowerCase().endsWith('.pdf')) {
-    alert('为了演示，目前仅支持 PDF 文件，请上传 PDF。');
+    alert('目前仅支持 PDF 文件，请上传 PDF。');
     return;
   }
-  S.fileName = file.name;
-  S.file = file;
-  S.fileId = null;
-  
+  S.fileName = file.name; S.file = file; S.fileId = null;
   $('#fileName').innerText = file.name;
   $('#fileStatus').style.display = 'block';
   $('#resultSection').style.display = 'none';
   $('#prog').innerHTML = '';
 }
 
-// ==========================================
-// 3. 核心逻辑：直接调用智谱 API
-// ==========================================
 async function runAnalysis() {
   if (!S.file || S.isAnalyzing) return;
-  
   const cfg = loadCfg();
-  if (!cfg.apiKey) {
-    alert('请先在右上角 Settings 中配置智谱 API Key！');
-    return;
-  }
+  if (!cfg.apiKey) { alert('请先在右上角 Settings 中配置智谱 API Key！'); return; }
 
   S.isAnalyzing = true;
   const btn = $('#analyzeBtn');
-  btn.disabled = true;
-  btn.innerText = '处理中...';
-  
+  btn.disabled = true; btn.innerText = '处理中...';
   const prog = $('#prog');
   prog.innerHTML = `<div class="prog"><div class="msg">正在上传文件到智谱服务器...</div><div class="bar2"><i></i></div></div>`;
 
   try {
-    // 第一步：上传文件获取 file_id
     const formData = new FormData();
     formData.append('file', S.file);
 
     const uploadRes = await fetch('https://open.bigmodel.cn/api/paas/v4/files', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + cfg.apiKey
-      },
+      headers: { 'Authorization': 'Bearer ' + cfg.apiKey },
       body: formData
     });
     
     const uploadData = await uploadRes.json();
-    if (!uploadData.id) {
-      throw new Error('上传失败: ' + JSON.stringify(uploadData));
-    }
+    if (!uploadData.id) throw new Error('上传失败: ' + JSON.stringify(uploadData));
     S.fileId = uploadData.id;
     
-    // 第二步：调用 AI 对话接口
     prog.innerHTML = `<div class="prog"><div class="msg">文件上传成功 (ID: ${S.fileId})，AI 正在阅读并分析...</div><div class="bar2"><i></i></div></div>`;
     
     const chatRes = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + cfg.apiKey
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
       body: JSON.stringify({
-        model: "glm-4-flash", // 使用免费模型
-        messages: [
-          { 
-            role: "user", 
-            content: "请阅读我上传的文件，总结其核心内容，并提取出重要的结构化信息（如涉及的金额、日期、相关方、主要条款等）。请用 Markdown 格式排版输出。" 
-          }
-        ],
+        model: "glm-4-flash",
+        messages: [{ role: "user", content: "请阅读我上传的文件，总结其核心内容，提取关键信息。请用 Markdown 格式排版输出。" }],
         file_ids: [S.fileId]
       })
     });
     
     const chatData = await chatRes.json();
-    
     if (chatData.choices && chatData.choices.length > 0) {
       prog.innerHTML = `<div class="prog" style="background:var(--good-bg);color:var(--good)">分析完成！</div>`;
       $('#resultSection').style.display = 'block';
-      // 这里简单处理，直接展示 AI 的 Markdown 文本
       $('#aiResult').innerHTML = chatData.choices[0].message.content;
     } else {
       throw new Error('AI 返回为空: ' + JSON.stringify(chatData));
     }
-
   } catch (error) {
     console.error(error);
     prog.innerHTML = `<div class="prog err">出错了: ${error.message}</div>`;
   } finally {
-    S.isAnalyzing = false;
-    btn.disabled = false;
-    btn.innerText = '重新分析';
+    S.isAnalyzing = false; btn.disabled = false; btn.innerText = '重新分析';
   }
 }
 
-// ==========================================
-// 4. 设置与工具函数 (保留你原本的配置功能)
-// ==========================================
 function loadCfg() {
-  try {
-    return JSON.parse(localStorage.getItem('qs_cfg') || '{}');
-  } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem('qs_cfg') || '{}'); } catch { return {}; }
 }
 
 function openSettings() {
@@ -266,11 +211,9 @@ function openSettings() {
     <div class="modal">
       <h3>AI 模型设置</h3>
       <div class="msub">你的 API Key 只保存在当前浏览器，不会上传到任何服务器。</div>
-      
       <div class="field"><label>智谱 API Key</label>
         <input id="cfg-key" type="password" placeholder="输入你的智谱 API Key..." value="${c.apiKey || ''}">
       </div>
-      
       <div class="foot2">
         <button class="btn" onclick="closeModal()">取消</button>
         <button class="btn primary" onclick="saveSettings()">保存</button>
@@ -282,42 +225,20 @@ function saveSettings() {
   const key = $('#cfg-key').value.trim();
   if (!key) return alert('请输入 API Key');
   localStorage.setItem('qs_cfg', JSON.stringify({ apiKey: key }));
-  closeModal();
-  alert('保存成功！');
+  closeModal(); alert('保存成功！');
 }
 
-function closeModal() {
-  $('#modal').innerHTML = '';
-}
+function closeModal() { $('#modal').innerHTML = ''; }
 
 function wireDragDrop() {
   const drop = $('#drop');
   if (!drop) return;
-  
-  ['dragenter', 'dragover'].forEach(eventName => {
-    drop.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      drop.classList.add('over');
-    }, false);
-  });
-  
-  ['dragleave', 'drop'].forEach(eventName => {
-    drop.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      drop.classList.remove('over');
-    }, false);
-  });
-  
-  drop.addEventListener('drop', (e) => {
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  }, false);
+  ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }, false));
+  ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }, false));
+  drop.addEventListener('drop', e => { if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]); }, false);
 }
 
 function $(s) { return document.querySelector(s); }
-
-// 启动
 renderHome();
 </script>
 </body>
