@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QS Document Intelligence - Pure Frontend</title>
+<title>Qs Smart AI</title>
+<!-- 引入 pdf.js 用于本地解析 PDF 文本 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
 :root{
   --ink:#14171a; --ink-2:#3d464e; --muted:#6b7681; --faint:#98a2ac;
@@ -28,9 +30,7 @@ header{background:var(--card);border-bottom:1px solid var(--line);position:stick
 .logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;letter-spacing:-.01em;cursor:pointer}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
 .spacer{flex:1}
-.mode{font-size:10px;letter-spacing:.06em;padding:2px 7px;border-radius:4px;background:var(--panel);
-  color:var(--faint);border:1px solid var(--line);font-weight:500}
-.mode.live{background:var(--good-bg);color:var(--good);border-color:var(--good-line)}
+.badge{font-size:11px;color:var(--muted);background:var(--panel);padding:3px 8px;border-radius:4px;border:1px solid var(--line)}
 
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
   color:var(--ink);padding:7px 13px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;
@@ -47,16 +47,25 @@ h2{font-size:15px;font-weight:600;margin-bottom:3px}
 section{margin-bottom:26px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
 
+.pagehead{display:flex;align-items:flex-end;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.pagehead h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.pagehead p{color:var(--muted);font-size:13px;margin-top:3px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:17px 18px;
+  cursor:pointer;transition:border-color .14s,box-shadow .14s;position:relative}
+.pcard:hover{border-color:#c9d2d6;box-shadow:0 2px 10px rgba(20,23,26,.05);transform:translateY(-1px)}
+.pcard h3{font-size:14.5px;font-weight:600;line-height:1.35;margin-bottom:4px}
+.pcard .meta{color:var(--muted);font-size:12px}
+.pcard.new{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:120px;color:var(--muted);background:transparent}
+.pcard.new:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+
 .drop{border:1.5px dashed var(--line);border-radius:var(--radius);padding:30px;text-align:center;
   background:var(--card);transition:border-color .15s,background .15s;cursor:pointer}
 .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
 .drop .big{font-size:14px;font-weight:500;margin-bottom:4px}
 .drop .small{font-size:12px;color:var(--muted)}
-
-.note{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 15px;
-  font-size:12.5px;color:var(--warn);margin-bottom:14px}
-.note.info{background:var(--accent-soft);border-color:#cfe4e2;color:var(--accent)}
-.note b{font-weight:600}
 
 .md-content { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
 .md-content h3 { font-size: 15px; margin: 16px 0 8px; color: var(--ink); }
@@ -77,54 +86,131 @@ section{margin-bottom:26px}
 .field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
 .field input{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;outline:none}
 .field input:focus{border-color:var(--accent)}
+.flex-row{display:flex;gap:10px;align-items:flex-end}
 .modal .foot2{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
 
 .prog{background:var(--panel);border-radius:8px;padding:13px 15px;font-size:12.5px;margin-top:12px}
-.prog .bar2{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:9px}
-.prog .bar2 i{display:block;height:100%;width:38%;background:var(--accent);border-radius:2px;
-  animation:slide 1.15s ease-in-out infinite}
-@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(360%)}}
+.prog .msg{color:var(--ink-2)}
 .prog.err{background:var(--bad-bg);color:var(--bad)}
+.prog.done{background:var(--good-bg);color:var(--good)}
+
+/* Footer */
+.footer { text-align: center; color: var(--faint); font-size: 12px; padding: 40px 0 20px; border-top: 1px solid var(--line); margin-top: 40px; }
 </style>
 </head>
 <body>
 <header>
   <div class="hwrap">
-    <div class="logo"><span class="dot"></span>QS Document Intelligence</div>
+    <div class="logo" onclick="goHome()"><span class="dot"></span>Qs Smart AI</div>
     <div class="spacer"></div>
-    <span class="mode live" id="mode">Pure Frontend</span>
+    <span class="badge">by quantify team</span>
     <button class="btn ghost sm" onclick="openSettings()">Settings</button>
   </div>
 </header>
+
 <main id="main"></main>
 <div id="modal"></div>
+<div class="footer">Powered by <b>quantify team</b></div>
 
 <script>
-const S = { fileName: null, fileId: null, isAnalyzing: false };
+// 配置 PDF.js 的 worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
+// --- 状态管理 ---
+let state = {
+  view: 'home', // 'home' 或 'project'
+  currentProject: null,
+  projects: JSON.parse(localStorage.getItem('qs_projects') || '[{"id":"p1","name":"Zung Fu Retail Project","contract":"Enabling Works"}]'),
+  file: null,
+  isAnalyzing: false
+};
+
+// --- 工具函数 ---
+const $ = s => document.querySelector(s);
+
+function loadCfg() {
+  try { return JSON.parse(localStorage.getItem('qs_cfg') || '{}'); } catch { return {}; }
+}
+
+// --- 路由渲染 ---
+function render() {
+  if (state.view === 'home') renderHome();
+  else renderProject();
+}
+
+function goHome() {
+  state.view = 'home';
+  state.currentProject = null;
+  state.file = null;
+  render();
+}
+
+function openProject(id) {
+  state.currentProject = state.projects.find(p => p.id === id);
+  state.view = 'project';
+  state.file = null;
+  render();
+}
+
+// --- 首页：项目列表 ---
 function renderHome() {
-  $('#main').innerHTML = `
-    <div class="pagehead" style="margin-bottom:20px">
-      <h1 style="font-size:22px;font-weight:600">PDF 智能解析</h1>
-      <p style="color:var(--muted);font-size:13px;margin-top:3px">上传 PDF，直接交给 AI 提取信息。</p>
+  const cards = state.projects.map(p => `
+    <div class="pcard" onclick="openProject('${p.id}')">
+      <h3>${p.name}</h3>
+      <div class="meta">${p.contract || 'No contract details'}</div>
     </div>
-    <section>
-      <div class="drop" id="drop" onclick="pickFiles()">
-        <div class="big">点击选择，或将 PDF 拖拽到此处</div>
-        <div class="small">支持 PDF（直接通过智谱 AI 解析）</div>
+  `).join('');
+
+  $('#main').innerHTML = `
+    <div class="pagehead">
+      <div>
+        <h1>Projects</h1>
+        <p>Select a project to upload documents and extract key information.</p>
       </div>
-      <input type="file" id="picker" hidden onchange="handleFile(this.files[0])">
+    </div>
+    <div class="grid">
+      ${cards}
+      <div class="pcard new" onclick="alert('多项目功能需要后端支持，此处暂展示单项目流程')">
+        <div style="font-size:24px;margin-bottom:4px">+</div>
+        <div>New project</div>
+      </div>
+    </div>
+  `;
+}
+
+// --- 项目内页：上传与分析 ---
+function renderProject() {
+  const p = state.currentProject;
+  $('#main').innerHTML = `
+    <div style="margin-bottom:20px">
+      <button class="btn ghost" style="padding-left:0;margin-bottom:10px" onclick="goHome()">← Back to Projects</button>
+      <div class="pagehead" style="margin-bottom:0">
+        <div>
+          <h1>${p.name}</h1>
+          <p>${p.contract || ''}</p>
+        </div>
+      </div>
+    </div>
+
+    <section>
+      <div class="drop" id="drop" onclick="$('#picker').click()">
+        <div class="big">Click to upload or drag PDF here</div>
+        <div class="small">We will read the PDF locally and send the text to AI.</div>
+      </div>
+      <input type="file" id="picker" hidden accept=".pdf" onchange="handleFile(this.files[0])">
     </section>
+
     <section id="fileStatus" style="display:none">
-      <h2>当前文件</h2>
+      <h2>Document to Analyze</h2>
       <div class="card" style="padding:16px 18px; display:flex; align-items:center; justify-content:space-between">
-        <span id="fileName" style="font-weight:500"></span>
-        <button class="btn primary" id="analyzeBtn" onclick="runAnalysis()">开始 AI 分析</button>
+        <span id="fileName" style="font-weight:500;color:var(--accent)"></span>
+        <button class="btn primary" id="analyzeBtn" onclick="runAnalysis()">Analyze with AI</button>
       </div>
       <div id="prog"></div>
     </section>
+
     <section id="resultSection" style="display:none">
-      <h2>AI 分析结果</h2>
+      <h2>Analysis Result</h2>
       <div class="card" style="padding:20px 24px">
         <div class="md-content" id="aiResult"></div>
       </div>
@@ -133,102 +219,17 @@ function renderHome() {
   wireDragDrop();
 }
 
-function pickFiles() { $('#picker').click(); }
-
+// --- 文件处理 ---
 function handleFile(file) {
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    alert('目前仅支持 PDF 文件，请上传 PDF。');
-    return;
-  }
-  S.fileName = file.name; S.file = file; S.fileId = null;
+  if (!file.name.toLowerCase().endsWith('.pdf')) return alert('Please upload a PDF file.');
+  
+  state.file = file;
   $('#fileName').innerText = file.name;
   $('#fileStatus').style.display = 'block';
   $('#resultSection').style.display = 'none';
   $('#prog').innerHTML = '';
 }
-
-async function runAnalysis() {
-  if (!S.file || S.isAnalyzing) return;
-  const cfg = loadCfg();
-  if (!cfg.apiKey) { alert('请先在右上角 Settings 中配置智谱 API Key！'); return; }
-
-  S.isAnalyzing = true;
-  const btn = $('#analyzeBtn');
-  btn.disabled = true; btn.innerText = '处理中...';
-  const prog = $('#prog');
-  prog.innerHTML = `<div class="prog"><div class="msg">正在上传文件到智谱服务器...</div><div class="bar2"><i></i></div></div>`;
-
-  try {
-    const formData = new FormData();
-    formData.append('file', S.file);
-
-    const uploadRes = await fetch('https://open.bigmodel.cn/api/paas/v4/files', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + cfg.apiKey },
-      body: formData
-    });
-    
-    const uploadData = await uploadRes.json();
-    if (!uploadData.id) throw new Error('上传失败: ' + JSON.stringify(uploadData));
-    S.fileId = uploadData.id;
-    
-    prog.innerHTML = `<div class="prog"><div class="msg">文件上传成功 (ID: ${S.fileId})，AI 正在阅读并分析...</div><div class="bar2"><i></i></div></div>`;
-    
-    const chatRes = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
-      body: JSON.stringify({
-        model: "glm-4-flash",
-        messages: [{ role: "user", content: "请阅读我上传的文件，总结其核心内容，提取关键信息。请用 Markdown 格式排版输出。" }],
-        file_ids: [S.fileId]
-      })
-    });
-    
-    const chatData = await chatRes.json();
-    if (chatData.choices && chatData.choices.length > 0) {
-      prog.innerHTML = `<div class="prog" style="background:var(--good-bg);color:var(--good)">分析完成！</div>`;
-      $('#resultSection').style.display = 'block';
-      $('#aiResult').innerHTML = chatData.choices[0].message.content;
-    } else {
-      throw new Error('AI 返回为空: ' + JSON.stringify(chatData));
-    }
-  } catch (error) {
-    console.error(error);
-    prog.innerHTML = `<div class="prog err">出错了: ${error.message}</div>`;
-  } finally {
-    S.isAnalyzing = false; btn.disabled = false; btn.innerText = '重新分析';
-  }
-}
-
-function loadCfg() {
-  try { return JSON.parse(localStorage.getItem('qs_cfg') || '{}'); } catch { return {}; }
-}
-
-function openSettings() {
-  const c = loadCfg();
-  $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
-      <h3>AI 模型设置</h3>
-      <div class="msub">你的 API Key 只保存在当前浏览器，不会上传到任何服务器。</div>
-      <div class="field"><label>智谱 API Key</label>
-        <input id="cfg-key" type="password" placeholder="输入你的智谱 API Key..." value="${c.apiKey || ''}">
-      </div>
-      <div class="foot2">
-        <button class="btn" onclick="closeModal()">取消</button>
-        <button class="btn primary" onclick="saveSettings()">保存</button>
-      </div>
-    </div></div>`;
-}
-
-function saveSettings() {
-  const key = $('#cfg-key').value.trim();
-  if (!key) return alert('请输入 API Key');
-  localStorage.setItem('qs_cfg', JSON.stringify({ apiKey: key }));
-  closeModal(); alert('保存成功！');
-}
-
-function closeModal() { $('#modal').innerHTML = ''; }
 
 function wireDragDrop() {
   const drop = $('#drop');
@@ -238,8 +239,179 @@ function wireDragDrop() {
   drop.addEventListener('drop', e => { if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]); }, false);
 }
 
-function $(s) { return document.querySelector(s); }
-renderHome();
+// --- 核心：本地提取 PDF -> 发送给自定义 API ---
+async function runAnalysis() {
+  if (!state.file || state.isAnalyzing) return;
+  const cfg = loadCfg();
+  if (!cfg.apiKey || !cfg.endpoint || !cfg.model) {
+    return alert('Please configure Endpoint, API Key, and Model Name in Settings first.');
+  }
+
+  state.isAnalyzing = true;
+  const btn = $('#analyzeBtn');
+  btn.disabled = true; btn.innerText = 'Processing...';
+  const prog = $('#prog');
+  
+  try {
+    // 1. 本地读取 PDF 文本
+    prog.innerHTML = `<div class="prog"><div class="msg">Step 1/2: Extracting text from PDF locally...</div></div>`;
+    
+    const arrayBuffer = await state.file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    
+    // 为了速度，这里只提取前 10 页作为演示
+    const pagesToRead = Math.min(pdf.numPages, 10);
+    for (let i = 1; i <= pagesToRead; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+    }
+
+    if (!fullText.trim()) {
+      throw new Error("No text found in PDF. It might be a scanned image.");
+    }
+
+    // 2. 发送给 API
+    prog.innerHTML = `<div class="prog"><div class="msg">Step 2/2: Sending to AI for analysis (${cfg.model})...</div></div>`;
+    
+    // 处理 Endpoint 格式 (兼容带不带 /v1 或 /chat/completions)
+    let url = cfg.endpoint.replace(/\/$/, '');
+    if (!url.endsWith('/chat/completions')) {
+      url = url.endsWith('/v1') ? url + '/chat/completions' : url + '/v1/chat/completions';
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + cfg.apiKey
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [
+          { role: "system", content: "You are a professional Quantity Surveyor assistant. Extract key information from the provided document text." },
+          { role: "user", content: "Please summarize the core content, extract key figures, dates, and important clauses from this document:\n\n" + fullText }
+        ],
+        temperature: 0.2
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || JSON.stringify(data));
+    }
+
+    if (data.choices && data.choices.length > 0) {
+      prog.innerHTML = `<div class="prog done">Analysis completed!</div>`;
+      $('#resultSection').style.display = 'block';
+      // 简单地将 Markdown 渲染为 HTML（依赖 AI 返回标准 markdown）
+      $('#aiResult').innerHTML = data.choices[0].message.content.replace(/\n/g, '<br>');
+    } else {
+      throw new Error('AI returned an empty response.');
+    }
+
+  } catch (error) {
+    console.error(error);
+    prog.innerHTML = `<div class="prog err">Error: ${error.message}</div>`;
+  } finally {
+    state.isAnalyzing = false; btn.disabled = false; btn.innerText = 'Analyze with AI';
+  }
+}
+
+// --- 设置与测试连接 ---
+function openSettings() {
+  const c = loadCfg();
+  $('#modal').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>Add Model</h3>
+      <div class="msub">Configure your custom AI endpoint (OpenAI compatible).</div>
+      
+      <div class="field">
+        <label>Endpoint</label>
+        <input id="cfg-endpoint" placeholder="https://www.moyu.cn/v1" value="${c.endpoint || ''}">
+      </div>
+      
+      <div class="field">
+        <label>API Key</label>
+        <div class="flex-row">
+          <input id="cfg-key" type="password" placeholder="sk-..." value="${c.apiKey || ''}" style="flex:1">
+          <button class="btn" onclick="testConnection()">Test connection</button>
+        </div>
+        <div id="test-result" style="font-size:11px;margin-top:5px;display:none"></div>
+      </div>
+      
+      <div class="field">
+        <label>Model Name</label>
+        <input id="cfg-model" placeholder="DeepSeek-V4.1-Flash-1017" value="${c.model || ''}">
+      </div>
+      
+      <div class="foot2">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="saveSettings()">Save</button>
+      </div>
+    </div></div>`;
+}
+
+async function testConnection() {
+  const endpoint = $('#cfg-endpoint').value.trim();
+  const apiKey = $('#cfg-key').value.trim();
+  const model = $('#cfg-model').value.trim();
+  const resDiv = $('#test-result');
+  
+  if (!endpoint || !apiKey || !model) {
+    resDiv.style.display = 'block'; resDiv.style.color = 'var(--bad)'; resDiv.innerText = 'Please fill all fields first.';
+    return;
+  }
+  
+  resDiv.style.display = 'block'; resDiv.style.color = 'var(--muted)'; resDiv.innerText = 'Testing...';
+
+  try {
+    let url = endpoint.replace(/\/$/, '');
+    if (!url.endsWith('/chat/completions')) {
+      url = url.endsWith('/v1') ? url + '/chat/completions' : url + '/v1/chat/completions';
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: "user", content: "Hello" }],
+        max_tokens: 5
+      })
+    });
+
+    if (response.ok) {
+      resDiv.style.color = 'var(--good)'; resDiv.innerText = '✅ Connection successful!';
+    } else {
+      const err = await response.json();
+      resDiv.style.color = 'var(--bad)'; resDiv.innerText = '❌ Failed: ' + (err.error?.message || response.status);
+    }
+  } catch (e) {
+    resDiv.style.color = 'var(--bad)'; resDiv.innerText = '❌ Network Error: ' + e.message;
+  }
+}
+
+function saveSettings() {
+  const cfg = {
+    endpoint: $('#cfg-endpoint').value.trim(),
+    apiKey: $('#cfg-key').value.trim(),
+    model: $('#cfg-model').value.trim()
+  };
+  if (!cfg.endpoint || !cfg.apiKey || !cfg.model) return alert('All fields are required.');
+  localStorage.setItem('qs_cfg', JSON.stringify(cfg));
+  closeModal();
+}
+
+function closeModal() { $('#modal').innerHTML = ''; }
+
+// 启动
+render();
 </script>
 </body>
 </html>
